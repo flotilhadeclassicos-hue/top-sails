@@ -1,0 +1,42 @@
+import { useState } from 'react'
+import ContasReceber from './financeiro/ContasReceber'
+import ContasPagar from './financeiro/ContasPagar'
+import ClientesFinanceiro from './financeiro/ClientesFinanceiro'
+
+const TABS = [
+  { id:'receber', label:'Contas a Receber' },
+  { id:'pagar',   label:'Contas a Pagar'   },
+  { id:'clientes',label:'Clientes'          },
+]
+
+export default function GestaoFinanceira() {
+  const [tab, setTab] = useState('receber')
+
+  const content = {
+    receber:  <ContasReceber     key="receber"  />,
+    pagar:    <ContasPagar       key="pagar"    />,
+    clientes: <ClientesFinanceiro key="clientes" />,
+  }
+
+  return (
+    <div style={{ padding:'20px 24px' }}>
+      <nav className="erp-bc">
+        <span>Top Sails</span><span className="sep">/</span>
+        <span className="cur">Gestão Financeira</span>
+      </nav>
+      <div className="erp-toolbar">
+        <h1 className="erp-page-title">Gestão Financeira</h1>
+      </div>
+
+      <div className="erp-tabs">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={`erp-tab ${tab===t.id?'active':''}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {content[tab]}
+    </div>
+  )
+}

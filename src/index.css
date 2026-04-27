@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.42;
+  background: #F4F6F8;
+  color: #16191F;
+  -webkit-font-smoothing: antialiased;
+}
+#root { width: 100%; min-height: 100svh; display: flex; }
+
+/* ── ERP Table ───────────────────────────────────────── */
+.erp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.erp-table thead th {
+  background: #F0F2F5;
+  border: 1px solid #D8DDE6;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #54698D;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.erp-table thead th.right { text-align: right; }
+.erp-table tbody td {
+  border: 1px solid #E4E7EA;
+  padding: 5px 10px;
+  color: #16191F;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.erp-table tbody td.right  { text-align: right; }
+.erp-table tbody td.center { text-align: center; }
+.erp-table tbody td.muted  { color: #54698D; }
+.erp-table tbody td.mono   { font-family: ui-monospace, monospace; color: #0070D2; font-weight: 600; }
+.erp-table tbody td.credit { color: #2E7D32; font-weight: 600; }
+.erp-table tbody td.debit  { color: #C62828; font-weight: 600; }
+.erp-table tbody tr:nth-child(even) { background: #F9FBFC; }
+.erp-table tbody tr:hover { background: #EAF3FB !important; }
+.erp-table .empty td { text-align: center; padding: 28px; color: #8A99A8; font-style: italic; }
+
+/* ── ERP Form ────────────────────────────────────────── */
+.erp-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #54698D;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.erp-input, .erp-select, .erp-textarea {
+  width: 100%;
+  border: 1px solid #D8DDE6;
+  border-radius: 2px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #16191F;
+  background: #fff;
+  line-height: 1.42;
+  transition: border-color .15s, box-shadow .15s;
+}
+.erp-input:focus, .erp-select:focus, .erp-textarea:focus {
+  outline: none;
+  border-color: #0070D2;
+  box-shadow: 0 0 0 2px rgba(0,112,210,.18);
+}
+.erp-textarea { resize: vertical; }
+
+/* ── ERP Buttons ─────────────────────────────────────── */
+.erp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1.42;
+}
+.erp-btn-primary   { background:#0070D2; color:#fff; border-color:#0070D2; }
+.erp-btn-primary:hover { background:#005FB0; border-color:#005FB0; }
+.erp-btn-secondary { background:#fff; color:#16191F; border-color:#D8DDE6; }
+.erp-btn-secondary:hover { background:#F4F6F8; }
+.erp-btn-success   { background:#2E7D32; color:#fff; border-color:#2E7D32; }
+.erp-btn-success:hover { background:#1B5E20; border-color:#1B5E20; }
+.erp-btn-danger    { background:#C62828; color:#fff; border-color:#C62828; }
+.erp-btn-danger:hover { background:#A51E1E; border-color:#A51E1E; }
+.erp-btn-danger-outline { background:#fff; color:#C62828; border-color:#C62828; }
+.erp-btn-danger-outline:hover { background:#FDECEA; }
+.erp-btn-sm { padding: 3px 8px; font-size: 11px; }
+.erp-btn-xs { padding: 2px 6px; font-size: 11px; }
+.erp-btn-link { background:transparent; color:#0070D2; border-color:transparent; padding:0; font-weight:400; }
+.erp-btn-link:hover { text-decoration:underline; }
+.erp-btn-link-danger { background:transparent; color:#C62828; border-color:transparent; padding:0; font-weight:400; }
+.erp-btn-link-danger:hover { text-decoration:underline; }
+.erp-btn-link-purple { background:transparent; color:#6A1B9A; border-color:transparent; padding:0; font-weight:400; }
+.erp-btn-link-purple:hover { text-decoration:underline; }
+.erp-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+/* ── ERP Stat Cards ──────────────────────────────────── */
+.erp-stat {
+  background:#fff;
+  border:1px solid #D8DDE6;
+  border-radius:2px;
+  padding:12px 16px;
+}
+.erp-stat .s-label {
+  font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.06em;
+  color:#54698D; margin-bottom:4px;
+}
+.erp-stat .s-value { font-size:18px; font-weight:600; letter-spacing:-.02em; }
+.erp-stat.green .s-value { color:#2E7D32; }
+.erp-stat.red   .s-value { color:#C62828; }
+.erp-stat.blue  .s-value { color:#0070D2; }
+.erp-stat.orange .s-value { color:#E65100; }
+
+/* ── ERP Tabs ────────────────────────────────────────── */
+.erp-tabs { display:flex; border-bottom:1px solid #D8DDE6; margin-bottom:14px; }
+.erp-tab {
+  padding:7px 16px;
+  font-size:12px; font-weight:500;
+  color:#54698D;
+  border:none; border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  cursor:pointer;
+  background:transparent;
+  font-family:inherit;
+  transition:color .15s;
+  white-space:nowrap;
+}
+.erp-tab:hover { color:#16191F; }
+.erp-tab.active { color:#0070D2; border-bottom-color:#0070D2; font-weight:600; }
+
+/* ── ERP Page Header ─────────────────────────────────── */
+.erp-bc { font-size:11px; color:#54698D; margin-bottom:5px; display:flex; align-items:center; gap:3px; }
+.erp-bc .sep { color:#C9D3DD; }
+.erp-bc .cur { color:#16191F; }
+.erp-toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:10px; border-bottom:1px solid #D8DDE6; margin-bottom:16px;
+}
+.erp-page-title { font-size:15px; font-weight:600; color:#16191F; letter-spacing:-.01em; margin:0; }
+
+/* ── ERP Panel ───────────────────────────────────────── */
+.erp-panel { background:#fff; border:1px solid #D8DDE6; border-radius:2px; overflow:hidden; }
+
+/* ── ERP Search/Filter row ───────────────────────────── */
+.erp-filter-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.erp-filter-row .erp-input,
+.erp-filter-row .erp-select { width:auto; }
+
+/* ── Inline table inputs (Pedidos) ───────────────────── */
+.table-input {
+  width:100%; border:none; background:transparent;
+  font-size:12px; font-family:inherit; color:#16191F;
+  padding:2px 4px; outline:none;
+}
+.table-input:focus { background:#EAF3FB; outline:1px solid #0070D2; border-radius:1px; }
+.table-input.right { text-align:right; }
+.table-input.center { text-align:center; }
