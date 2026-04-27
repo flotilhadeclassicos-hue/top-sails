@@ -44,50 +44,74 @@ function FField({ label, children, col }) {
   )
 }
 
+function ErroBanco({ msg }) {
+  if (!msg) return null
+  return (
+    <div style={{ margin:'10px 0', padding:'8px 10px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', fontSize:'11px', color:'#C62828' }}>
+      {msg}
+    </div>
+  )
+}
+
 function BaixaModal({ conta, onClose, onDone }) {
-  const [forma, setForma] = useState('pix')
+  const [forma, setForma]   = useState('pix')
   const [parteId, setParteId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [erro, setErro]     = useState('')
   const partes = readLocal('ts_partes', [])
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    setErro('')
+    setSaving(true)
     const dt = today()
     const novosLancIds = []
 
-    if (forma === 'pix') {
-      const fin = readLocal('ts_financeiro', [])
-      const lanc = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
-      writeLocal('ts_financeiro', [...fin, lanc])
-      novosLancIds.push(lanc.id)
-    } else if (forma === 'dinheiro') {
-      const cax = readLocal('ts_caixinha', [])
-      const lanc = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
-      writeLocal('ts_caixinha', [...cax, lanc])
-      novosLancIds.push(lanc.id)
-    } else if (forma === 'cruzado') {
-      // Partidas dobradas — recebimento em conta de terceiros
-      const baixaCruzadaId = uuid()
-      const ob          = readLocal('ts_offBook', [])
-      const parte       = partes.find(p => p.id === parteId)
-      const allCats     = readLocal('ts_categorias', [])
-      const catReceita  = conta.categoriaId
-      const catParteRel = (allCats.find(c => c.nome === 'Parte Relacionada') || {}).id || catReceita
+    try {
+      if (forma === 'pix') {
+        const fin = readLocal('ts_financeiro', [])
+        const lanc = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        await writeLocal('ts_financeiro', [...fin, lanc])
+        novosLancIds.push(lanc.id)
+      } else if (forma === 'dinheiro') {
+        const cax = readLocal('ts_caixinha', [])
+        const lanc = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        await writeLocal('ts_caixinha', [...cax, lanc])
+        novosLancIds.push(lanc.id)
+      } else if (forma === 'cruzado') {
+        const baixaCruzadaId = uuid()
+        const ob          = readLocal('ts_offBook', [])
+        const parte       = partes.find(p => p.id === parteId)
+        const allCats     = readLocal('ts_categorias', [])
+        const catReceita  = conta.categoriaId
+        const catParteRel = (allCats.find(c => c.nome === 'Parte Relacionada') || {}).id
 
-      // 1. Off Book Crédito — categoria da conta (receita); aparece na aba Off Book
-      const cr = { id:uuid(), descricao:conta.descricao, categoriaId:catReceita, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
-      // 2. Off Book Débito — categoria "Parte Relacionada"; aparece na aba Off Book
-      const db = { id:uuid(), descricao:`Repasse — ${parte?.nome||'Terceiro'}`, categoriaId:catParteRel, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
-      // 3. Gestão de Contas Crédito — categoria "Parte Relacionada"; aparece em Gestão de Contas
-      const gc = { id:uuid(), descricao:conta.descricao, categoriaId:catParteRel, parteId, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
+        if (!catParteRel) {
+          setErro('Categoria "Parte Relacionada" não encontrada. Cadastre-a em Categorias.')
+          setSaving(false)
+          return
+        }
 
-      writeLocal('ts_offBook', [...ob, cr, db, gc])
-      novosLancIds.push(cr.id, db.id, gc.id)
+        // 1. Off Book Crédito — categoria da ordem
+        const cr = { id:uuid(), descricao:conta.descricao, categoriaId:catReceita, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
+        // 2. Off Book Débito — categoria "Parte Relacionada"
+        const db = { id:uuid(), descricao:`Repasse — ${parte?.nome||'Terceiro'}`, categoriaId:catParteRel, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
+        // 3. Gestão de Contas Crédito — conta da parte relacionada
+        const gc = { id:uuid(), descricao:conta.descricao, categoriaId:catParteRel, parteId, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
+
+        await writeLocal('ts_offBook', [...ob, cr, db, gc])
+        novosLancIds.push(cr.id, db.id, gc.id)
+      }
+
+      const contas = readLocal('ts_contasReceber', [])
+      await writeLocal('ts_contasReceber', contas.map(c =>
+        c.id === conta.id ? { ...c, status:'confirmado', formaPagamento:forma, lancIds:novosLancIds } : c
+      ))
+      onDone(); onClose()
+    } catch (e) {
+      setErro('Erro ao salvar no banco de dados. Verifique a conexão e tente novamente.')
+    } finally {
+      setSaving(false)
     }
-
-    const contas = readLocal('ts_contasReceber', [])
-    writeLocal('ts_contasReceber', contas.map(c =>
-      c.id === conta.id ? { ...c, status:'confirmado', formaPagamento:forma, lancIds:novosLancIds } : c
-    ))
-    onDone(); onClose()
   }
 
   return (
@@ -98,7 +122,7 @@ function BaixaModal({ conta, onClose, onDone }) {
       </div>
       <div style={{ marginBottom:'12px' }}>
         <label className="erp-label">Forma de Recebimento</label>
-        <select value={forma} onChange={e => { setForma(e.target.value); setParteId('') }} className="erp-select">
+        <select value={forma} onChange={e => { setForma(e.target.value); setParteId(''); setErro('') }} className="erp-select">
           <option value="pix">PIX → Bancos</option>
           <option value="dinheiro">Dinheiro → Caixinha</option>
           <option value="cruzado">Pagamento Cruzado → Off Book</option>
@@ -118,9 +142,12 @@ function BaixaModal({ conta, onClose, onDone }) {
           </div>
         </>
       )}
+      <ErroBanco msg={erro} />
       <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
-        <button onClick={onClose} className="erp-btn erp-btn-secondary">Cancelar</button>
-        <button onClick={handleConfirm} disabled={forma === 'cruzado' && !parteId} className="erp-btn erp-btn-success">Confirmar Recebimento</button>
+        <button onClick={onClose} disabled={saving} className="erp-btn erp-btn-secondary">Cancelar</button>
+        <button onClick={handleConfirm} disabled={saving || (forma === 'cruzado' && !parteId)} className="erp-btn erp-btn-success">
+          {saving ? 'Salvando...' : 'Confirmar Recebimento'}
+        </button>
       </div>
     </Modal>
   )

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { readLocal } from '../hooks/useLocalState'
+import { useState, useEffect } from 'react'
+import { useLocalState } from '../hooks/useLocalState'
 import { formatCurrency, formatDate, currentMonthKey, monthLabel } from '../utils/helpers'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
@@ -100,20 +100,23 @@ export default function Dashboard() {
   const [mes, setMes] = useState(currentMonthKey())
   const ano  = mes.substring(0, 4)
 
-  const contasReceber = readLocal('ts_contasReceber', [])
-  const contasPagar   = readLocal('ts_contasPagar',   [])
-  const ordens        = readLocal('ts_ordens',        [])
-  const pedidos       = readLocal('ts_pedidos',       [])
-  const clientes      = readLocal('ts_clientes',      [])
-  const fornecedores  = readLocal('ts_fornecedores',  [])
+  const [contasReceber] = useLocalState('ts_contasReceber', [])
+  const [contasPagar] = useLocalState('ts_contasPagar', [])
+  const [ordens] = useLocalState('ts_ordens', [])
+  const [pedidos] = useLocalState('ts_pedidos', [])
+  const [clientes] = useLocalState('ts_clientes', [])
+  const [fornecedores] = useLocalState('ts_fornecedores', [])
+  const [financeiro] = useLocalState('ts_financeiro', [])
+  const [caixinha] = useLocalState('ts_caixinha', [])
+  const [offBook] = useLocalState('ts_offBook', [])
 
   // ── Receitas consolidadas de todas as fontes ──────────────────────────────
   // Bancos (ts_financeiro) + Caixinha (ts_caixinha) + Off Book sem parteId (ts_offBook)
   // Todos os lançamentos com tipo='receita', independente da origem
   const todasReceitas = [
-    ...readLocal('ts_financeiro', []).map(i => ({ ...i, _fonte:'financeiro' })),
-    ...readLocal('ts_caixinha',   []).map(i => ({ ...i, _fonte:'caixinha'   })),
-    ...readLocal('ts_offBook',    []).filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
+    ...financeiro.map(i => ({ ...i, _fonte:'financeiro' })),
+    ...caixinha.map(i => ({ ...i, _fonte:'caixinha' })),
+    ...offBook.filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
   ].filter(i => i.tipo === 'receita')
 
   // ── Financeiro ────────────────────────────────────────────────────────────

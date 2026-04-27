@@ -18,9 +18,6 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user }) {
           <span style={{ fontSize:'20px' }}>⚓</span>
           <div>
             <div style={{ color:'#FFFFFF', fontSize:'13px', fontWeight:700, letterSpacing:'-0.01em' }}>Top Sails</div>
-            <div style={{ color:'#5D7A8C', fontSize:'10px', textTransform:'uppercase', letterSpacing:'0.06em', marginTop:'1px' }}>
-              Gestão Náutica
-            </div>
           </div>
         </div>
       </div>
@@ -69,9 +66,12 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, user }) {
         <div style={{ fontSize:'10px', color:'#4A6278', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' }}>
           Sessão Ativa
         </div>
-        <div style={{ color:'#C8D8E4', fontSize:'12px', fontWeight:500, marginBottom:'8px' }}>
-          {user?.nomeCompleto || user?.usuario}
+        <div style={{ color:'#C8D8E4', fontSize:'12px', fontWeight:500, marginBottom:'4px' }}>
+          {user?.user_metadata?.nomeCompleto || user?.email}
         </div>
+        {user?.user_metadata?.nomeCompleto && (
+          <div style={{ color:'#4A6278', fontSize:'10px', marginBottom:'8px' }}>{user.email}</div>
+        )}
         <button
           onClick={onLogout}
           style={{ fontSize:'11px', color:'#7F8C9A', background:'none', border:'1px solid #263648', borderRadius:'2px', padding:'3px 10px', cursor:'pointer', fontFamily:'inherit', transition:'background .15s' }}

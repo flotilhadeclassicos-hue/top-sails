@@ -86,13 +86,17 @@ function LancamentoForm({ parteId, initial, onClose, onDone }) {
   const catsFiltradas = categorias.filter(c =>
     form.tipo==='receita' ? (c.tipo==='receita'||c.tipo==='ambos') : (c.tipo==='despesa'||c.tipo==='ambos')
   )
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const ob = readLocal('ts_offBook', [])
     const p = { ...form, valor:parseFloat(form.valor)||0, parteId, baixaCruzadaId:null, contaId:null }
-    if (initial) { writeLocal('ts_offBook', ob.map(i => i.id===initial.id ? { ...i, ...p } : i)) }
-    else { writeLocal('ts_offBook', [...ob, { id:uuid(), ...p }]) }
-    onDone(); onClose()
+    try {
+      if (initial) { await writeLocal('ts_offBook', ob.map(i => i.id===initial.id ? { ...i, ...p } : i)) }
+      else { await writeLocal('ts_offBook', [...ob, { id:uuid(), ...p }]) }
+      onDone(); onClose()
+    } catch {
+      alert('Erro ao salvar. Verifique a conexão e tente novamente.')
+    }
   }
   return (
     <Modal title={initial ? 'Editar Lançamento' : 'Novo Lançamento Manual'} onClose={onClose}>
@@ -153,10 +157,14 @@ function ExtratoModal({ parte, onClose }) {
   const movimento = totalC - totalD
   const saldoFinal = saldoInicial + movimento
 
-  const handleDelete = (item) => {
+  const handleDelete = async (item) => {
     const all = readLocal('ts_offBook', [])
-    writeLocal('ts_offBook', all.filter(i => i.id !== item.id))
-    refresh()
+    try {
+      await writeLocal('ts_offBook', all.filter(i => i.id !== item.id))
+      refresh()
+    } catch {
+      alert('Erro ao excluir. Verifique a conexão e tente novamente.')
+    }
   }
 
   return (
