@@ -9,12 +9,13 @@ import Financeiro from './pages/financeiro/Financeiro'
 import GestaoFinanceira from './pages/GestaoFinanceira'
 import GestaoContas from './pages/GestaoContas'
 import Relatorios from './pages/Relatorios'
-import { writeLocal, readLocal, reloadAll, clearCache } from './hooks/useLocalState'
+import { writeLocal, readLocal, reloadAll, clearCache, preloadAll } from './hooks/useLocalState'
 import { supabase } from './lib/supabaseClient'
 import { uuid } from './utils/helpers'
 
 async function initDefaults() {
   try {
+    await preloadAll() // garante que o cache está carregado antes de ler
     const cats = readLocal('ts_categorias', [])
     if (cats.length === 0) {
       await writeLocal('ts_categorias', [
@@ -38,28 +39,36 @@ export default function App() {
   const [page, setPage]       = useState('dashboard')
 
   useEffect(() => {
-    // onAuthStateChange dispara INITIAL_SESSION na montagem — única fonte de verdade
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'INITIAL_SESSION') {
-        if (session) {
-          setUser(session.user)
-          await reloadAll()
-          await initDefaults()
-        }
-        setLoading(false)
-      } else if (event === 'SIGNED_IN') {
-        setUser(session.user)
-        await reloadAll()
-        await initDefaults()
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null)
-        clearCache()
-        setPage('dashboard')
-      }
-    })
+    let sub
 
-    return () => subscription.unsubscribe()
+    async function init() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+      } catch (e) {
+        console.error('Supabase getSession error:', e)
+      } finally {
+        setLoading(false)
+      }
+
+      try {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN')  { setUser(session.user); reloadAll().catch(console.error) }
+          if (event === 'SIGNED_OUT') { setUser(null); clearCache(); setPage('dashboard') }
+        })
+        sub = subscription
+      } catch (e) {
+        console.error('Supabase onAuthStateChange error:', e)
+      }
+    }
+
+    init()
+    return () => sub?.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (user) initDefaults()
+  }, [user])
 
   const logout = () => supabase.auth.signOut()
 
@@ -67,7 +76,7 @@ export default function App() {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#F4F6F8', flexDirection:'column', gap:'12px' }}>
         <span style={{ fontSize:'28px' }}>⚓</span>
-        <span style={{ fontSize:'13px', color:'#54698D', fontWeight:500 }}>Carregando Top Sails...</span>
+        <span style={{ fontSize:'13px', color:'#54698D', fontWeight:500 }}>Carregando TOP SAIL...</span>
       </div>
     )
   }

@@ -21,7 +21,7 @@ export default function GestaoFinanceira() {
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span>
+        <span>TOP SAIL</span><span className="sep">/</span>
         <span className="cur">Gestão Financeira</span>
       </nav>
       <div className="erp-toolbar">

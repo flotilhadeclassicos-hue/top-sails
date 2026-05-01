@@ -9,16 +9,19 @@ const navItems = [
   { id: 'relatorios',      label: 'Relatórios',         icon: '◫' },
 ]
 
-export default function Sidebar({ currentPage, onNavigate, onLogout, user }) {
+export default function Sidebar({ currentPage, onNavigate, onLogout, user, onCloseMobile }) {
   return (
     <aside style={{ width:'220px', minHeight:'100vh', background:'#1C2833', display:'flex', flexDirection:'column', flexShrink:0 }}>
       {/* Logo */}
       <div style={{ padding:'16px 18px 14px', borderBottom:'1px solid #263648' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-          <span style={{ fontSize:'20px' }}>⚓</span>
-          <div>
-            <div style={{ color:'#FFFFFF', fontSize:'13px', fontWeight:700, letterSpacing:'-0.01em' }}>Top Sails</div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+            <span style={{ fontSize:'20px' }}>⚓</span>
+            <div style={{ color:'#FFFFFF', fontSize:'13px', fontWeight:700, letterSpacing:'-0.01em' }}>TOP SAIL</div>
           </div>
+          {onCloseMobile && (
+            <button onClick={onCloseMobile} className="ts-sidebar-close" aria-label="Fechar menu">×</button>
+          )}
         </div>
       </div>
 

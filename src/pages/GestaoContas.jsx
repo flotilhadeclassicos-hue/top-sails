@@ -1,8 +1,24 @@
-import { useState } from 'react'
+import { useState, Component } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today, currentMonthKey, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
+
+class ErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(e) { return { error: e.message || String(e) } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding:'20px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', color:'#C62828', fontSize:'12px' }}>
+          <strong>Erro ao carregar extrato:</strong> {this.state.error}
+          <br /><button onClick={() => this.setState({ error: null })} style={{ marginTop:'8px', fontSize:'11px', cursor:'pointer' }}>Tentar novamente</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function StatCard({ label, value, cls }) {
   return (
@@ -34,16 +50,28 @@ function MonthSelector({ value, onChange }) {
 }
 
 function ParteForm({ initial, onClose }) {
-  const [partes, setPartes] = useLocalState('ts_partes', [])
   const [form, setForm] = useState(initial
     ? { nome:initial.nome, tipo:initial.tipo, telefone:initial.telefone||'', observacao:initial.observacao||'' }
     : { nome:'', tipo:'Pessoa', telefone:'', observacao:'' }
   )
-  const handleSubmit = (e) => {
+  const [saving, setSaving] = useState(false)
+  const [erro,   setErro]   = useState('')
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (initial) { setPartes(prev => prev.map(p => p.id===initial.id ? { ...p, ...form } : p)) }
-    else { setPartes(prev => [...prev, { id:uuid(), ...form }]) }
-    onClose()
+    setSaving(true); setErro('')
+    const current = readLocal('ts_partes', [])
+    const nova = initial
+      ? current.map(p => p.id === initial.id ? { ...p, ...form } : p)
+      : [...current, { id:uuid(), ...form }]
+    try {
+      await writeLocal('ts_partes', nova)
+      onClose()
+    } catch {
+      setErro('Erro ao salvar. Verifique a conexão e tente novamente.')
+    } finally {
+      setSaving(false)
+    }
   }
   return (
     <Modal title={initial ? 'Editar Parte Relacionada' : 'Nova Parte Relacionada'} onClose={onClose} size="sm">
@@ -68,9 +96,10 @@ function ParteForm({ initial, onClose }) {
           <label className="erp-label">Observação</label>
           <textarea value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao:e.target.value }))} rows={2} className="erp-textarea" />
         </div>
+        {erro && <div style={{ padding:'8px 10px', marginBottom:'10px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', fontSize:'11px', color:'#C62828' }}>{erro}</div>}
         <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
-          <button type="button" onClick={onClose} className="erp-btn erp-btn-secondary">Cancelar</button>
-          <button type="submit" className="erp-btn erp-btn-primary">{initial ? 'Salvar' : 'Cadastrar'}</button>
+          <button type="button" onClick={onClose} disabled={saving} className="erp-btn erp-btn-secondary">Cancelar</button>
+          <button type="submit" disabled={saving} className="erp-btn erp-btn-primary">{saving ? 'Salvando...' : initial ? 'Salvar' : 'Cadastrar'}</button>
         </div>
       </form>
     </Modal>
@@ -133,18 +162,16 @@ function LancamentoForm({ parteId, initial, onClose, onDone }) {
 }
 
 function ExtratoModal({ parte, onClose }) {
-  const [offBookState, setOffBookState] = useLocalState('ts_offBook', [])
+  const [offBook]    = useLocalState('ts_offBook',    [])
+  const [categorias] = useLocalState('ts_categorias', [])
   const [mes, setMes] = useState(currentMonthKey())
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
-  const [refreshKey, setRefreshKey] = useState(0)
-  const categorias = readLocal('ts_categorias', [])
 
-  const refresh = () => { setRefreshKey(k => k+1); setOffBookState(readLocal('ts_offBook', [])) }
+  const refresh = () => { setShowForm(false); setEditItem(null) }
 
-  const offBook = readLocal('ts_offBook', [])
-  const all     = offBook.filter(i => i.parteId === parte.id)
+  const all = offBook.filter(i => i.parteId === parte.id)
   const entries = all.filter(i => i.data?.startsWith(mes))
 
   // Saldo inicial = tudo antes do mês
@@ -197,7 +224,7 @@ function ExtratoModal({ parte, onClose }) {
               {entries.map(item => {
                 const cat = categorias.find(c => c.id===item.categoriaId)
                 return (
-                  <tr key={`${item.id}-${refreshKey}`}>
+                  <tr key={item.id}>
                     <td className="muted">{formatDate(item.data)}</td>
                     <td>{item.descricao}</td>
                     <td className="muted">{cat?.nome||'—'}</td>
@@ -228,14 +255,13 @@ function ExtratoModal({ parte, onClose }) {
 }
 
 export default function GestaoContas() {
-  const [partes, setPartes] = useLocalState('ts_partes', [])
+  const [partes]   = useLocalState('ts_partes',  [])
+  const [offBook]  = useLocalState('ts_offBook', [])
   const [mes, setMes] = useState(currentMonthKey())
   const [showParteForm, setShowParteForm] = useState(false)
   const [editParte, setEditParte] = useState(null)
   const [deleteParte, setDeleteParte] = useState(null)
   const [extratoParte, setExtratoParte] = useState(null)
-
-  const offBook = readLocal('ts_offBook', [])
 
   const getStats = (parteId) => {
     const all = offBook.filter(i => i.parteId === parteId)
@@ -257,7 +283,7 @@ export default function GestaoContas() {
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span><span className="cur">Gestão de Contas</span>
+        <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Gestão de Contas</span>
       </nav>
       <div className="erp-toolbar">
         <h1 className="erp-page-title">Gestão de Contas</h1>
@@ -308,10 +334,14 @@ export default function GestaoContas() {
       {showParteForm && <ParteForm initial={editParte} onClose={() => setShowParteForm(false)} />}
       {deleteParte && (
         <ConfirmModal title="Excluir Parte" message={`Excluir a parte "${deleteParte.nome}"? Os lançamentos relacionados permanecerão.`} danger
-          onConfirm={() => setPartes(prev => prev.filter(p => p.id!==deleteParte.id))}
+          onConfirm={() => writeLocal('ts_partes', readLocal('ts_partes', []).filter(p => p.id !== deleteParte.id))}
           onClose={() => setDeleteParte(null)} />
       )}
-      {extratoParte && <ExtratoModal parte={extratoParte} onClose={() => setExtratoParte(null)} />}
+      {extratoParte && (
+        <ErrorBoundary key={extratoParte.id}>
+          <ExtratoModal parte={extratoParte} onClose={() => setExtratoParte(null)} />
+        </ErrorBoundary>
+      )}
     </div>
   )
 }

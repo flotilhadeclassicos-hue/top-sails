@@ -5,7 +5,7 @@ export default function Financeiro() {
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span>
+        <span>TOP SAIL</span><span className="sep">/</span>
         <span className="cur">Financeiro</span>
       </nav>
       <div className="erp-toolbar">

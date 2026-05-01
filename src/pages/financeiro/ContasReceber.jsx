@@ -3,6 +3,7 @@ import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
+import ClienteModal, { LinkBtn } from '../../components/ui/ClienteModal'
 
 function StatCard({ label, value, cls }) {
   return (
@@ -137,13 +138,17 @@ function ContaForm({ initial, onClose, onDone }) {
     ? { descricao:initial.descricao, categoriaId:initial.categoriaId, valor:initial.valor, vencimento:initial.vencimento }
     : { descricao:'', categoriaId:'', valor:'', vencimento:today() }
   )
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const contas = readLocal('ts_contasReceber', [])
     const p = { ...form, valor:parseFloat(form.valor)||0 }
-    if (initial) { writeLocal('ts_contasReceber', contas.map(c => c.id===initial.id ? { ...c, ...p } : c)) }
-    else { writeLocal('ts_contasReceber', [...contas, { id:uuid(), status:'aberto', ordemId:null, lancIds:[], formaPagamento:null, baixaCruzadaId:null, ...p }]) }
-    onDone(); onClose()
+    try {
+      if (initial) { await writeLocal('ts_contasReceber', contas.map(c => c.id===initial.id ? { ...c, ...p } : c)) }
+      else { await writeLocal('ts_contasReceber', [...contas, { id:uuid(), status:'aberto', ordemId:null, lancIds:[], formaPagamento:null, baixaCruzadaId:null, ...p }]) }
+      onDone(); onClose()
+    } catch {
+      alert('Erro ao salvar. Verifique a conexão e tente novamente.')
+    }
   }
   return (
     <Modal title={initial ? 'Editar Conta a Receber' : 'Nova Conta a Receber'} onClose={onClose}>
@@ -182,24 +187,54 @@ export default function ContasReceber() {
   const [baixaItem, setBaixaItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
   const [cadeiaId, setCadeiaId] = useState(null)
+  const [clienteModal, setClienteModal] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [statusFilter, setStatusFilter] = useState('aberto')
   const categorias = readLocal('ts_categorias', [])
+  const clientes   = readLocal('ts_clientes',   [])
+  const ordens     = readLocal('ts_ordens',     [])
+  const pedidos    = readLocal('ts_pedidos',    [])
+
+  const clienteDaConta = (conta) => {
+    const ordemId  = conta.ordemId  || ordens.find(o => o.contaReceberId === conta.id)?.id
+    const pedidoId = conta.pedidoId
+    const clienteId = ordens.find(o => o.id === ordemId)?.clienteId
+                   ?? pedidos.find(p => p.id === pedidoId)?.clienteId
+    return clientes.find(c => c.id === clienteId) || null
+  }
 
   const refresh = () => { setRefreshKey(k => k+1); setContas(readLocal('ts_contasReceber', [])) }
 
-  const filtered = contas.filter(c => !statusFilter || c.status === statusFilter)
-  const emAberto = contas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
-  const recebido = contas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
+  const hoje = today()
+  const isAtrasada = (c) => c.status === 'aberto' && !!c.vencimento && c.vencimento < hoje
 
-  const handleEstorno = (conta) => {
-    if (conta.formaPagamento==='pix')      { const f=readLocal('ts_financeiro',[]); writeLocal('ts_financeiro', f.filter(l=>!conta.lancIds?.includes(l.id))) }
-    else if (conta.formaPagamento==='dinheiro') { const c=readLocal('ts_caixinha',[]); writeLocal('ts_caixinha', c.filter(l=>!conta.lancIds?.includes(l.id))) }
-    else if (conta.formaPagamento==='cruzado')  { const o=readLocal('ts_offBook',[]); writeLocal('ts_offBook', o.filter(l=>!conta.lancIds?.includes(l.id))) }
-    setContas(prev => prev.map(c => c.id===conta.id ? { ...c, status:'aberto', formaPagamento:null, lancIds:[] } : c))
+  const filtered = contas.filter(c => {
+    if (statusFilter === 'atrasado') return isAtrasada(c)
+    return !statusFilter || c.status === statusFilter
+  })
+
+  const emAberto  = contas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
+  const recebido  = contas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
+  const emAtraso  = contas.filter(isAtrasada).reduce((s,c) => s+(c.valor||0), 0)
+  const qtdAtraso = contas.filter(isAtrasada).length
+
+  const handleEstorno = async (conta) => {
+    try {
+      if (conta.formaPagamento==='pix')      { await writeLocal('ts_financeiro', readLocal('ts_financeiro',[]).filter(l=>!conta.lancIds?.includes(l.id))) }
+      else if (conta.formaPagamento==='dinheiro') { await writeLocal('ts_caixinha', readLocal('ts_caixinha',[]).filter(l=>!conta.lancIds?.includes(l.id))) }
+      else if (conta.formaPagamento==='cruzado')  { await writeLocal('ts_offBook', readLocal('ts_offBook',[]).filter(l=>!conta.lancIds?.includes(l.id))) }
+      setContas(prev => prev.map(c => c.id===conta.id ? { ...c, status:'aberto', formaPagamento:null, lancIds:[] } : c))
+    } catch {
+      alert('Erro ao estornar. Verifique a conexão e tente novamente.')
+    }
   }
 
-  const STATUS_TABS = [{ value:'', label:'Todos' }, { value:'aberto', label:'Em aberto' }, { value:'confirmado', label:'Confirmados' }]
+  const STATUS_TABS = [
+    { value:'',          label:'Todos'       },
+    { value:'aberto',    label:'Em aberto'   },
+    { value:'atrasado',  label:`Em atraso${qtdAtraso > 0 ? ` (${qtdAtraso})` : ''}` },
+    { value:'confirmado',label:'Confirmados' },
+  ]
 
   return (
     <div>
@@ -208,9 +243,10 @@ export default function ContasReceber() {
         <button onClick={() => { setEditItem(null); setShowForm(true) }} className="erp-btn erp-btn-primary erp-btn-sm">+ Nova Conta</button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'16px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', marginBottom:'16px' }}>
         <StatCard label="Saldo em Aberto" value={emAberto} cls="orange" />
-        <StatCard label="Total Recebido"  value={recebido} cls="green"  />
+        <StatCard label="Em Atraso"        value={emAtraso} cls="red"    />
+        <StatCard label="Total Recebido"   value={recebido} cls="green"  />
       </div>
 
       <div className="erp-tabs" style={{ marginBottom:'12px' }}>
@@ -222,24 +258,38 @@ export default function ContasReceber() {
       <div className="erp-panel">
         <table className="erp-table">
           <thead><tr>
-            <th>Descrição</th><th style={{ width:'130px' }}>Categoria</th>
+            <th>Descrição</th><th style={{ width:'130px' }}>Cliente</th>
+            <th style={{ width:'110px' }}>Categoria</th>
             <th style={{ width:'90px' }}>Vencimento</th><th style={{ width:'80px' }}>Pagamento</th>
             <th className="right" style={{ width:'110px' }}>Valor</th>
             <th style={{ width:'90px' }}>Status</th><th style={{ width:'160px' }}>Ações</th>
           </tr></thead>
           <tbody>
-            {filtered.length===0 && <tr className="empty"><td colSpan={7}>Nenhuma conta encontrada</td></tr>}
+            {filtered.length===0 && <tr className="empty"><td colSpan={8}>Nenhuma conta encontrada</td></tr>}
             {filtered.map(conta => {
-              const cat = categorias.find(c => c.id===conta.categoriaId)
-              const isCruzado = conta.lancIds?.length>0 && conta.formaPagamento==='cruzado'
+              const cat        = categorias.find(c => c.id===conta.categoriaId)
+              const clienteObj = clienteDaConta(conta)
+              const isCruzado  = conta.lancIds?.length>0 && conta.formaPagamento==='cruzado'
+              const atrasada   = isAtrasada(conta)
               return (
-                <tr key={conta.id}>
+                <tr key={conta.id} style={atrasada ? { background:'#FFF5F5' } : undefined}>
                   <td>{conta.descricao}</td>
+                  <td>
+                    {clienteObj
+                      ? <LinkBtn onClick={() => setClienteModal(clienteObj)}>{clienteObj.nome}</LinkBtn>
+                      : <span className="muted">—</span>}
+                  </td>
                   <td className="muted">{cat?.nome||'—'}</td>
-                  <td className="muted">{formatDate(conta.vencimento)}</td>
+                  <td style={{ color: atrasada ? '#C62828' : undefined, fontWeight: atrasada ? 600 : undefined }}>
+                    {formatDate(conta.vencimento)}
+                  </td>
                   <td>{conta.formaPagamento ? <Badge value={conta.formaPagamento}/> : '—'}</td>
                   <td className="right credit">{formatCurrency(conta.valor)}</td>
-                  <td><Badge value={conta.status}/></td>
+                  <td>
+                    {atrasada
+                      ? <span style={{ display:'inline-block', padding:'1px 7px', fontSize:'11px', fontWeight:600, borderRadius:'2px', border:'1px solid #E89088', background:'#FDECEA', color:'#C62828', whiteSpace:'nowrap' }}>Em atraso</span>
+                      : <Badge value={conta.status} />}
+                  </td>
                   <td>
                     <span style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
                       {conta.status==='aberto' && <>
@@ -247,7 +297,7 @@ export default function ContasReceber() {
                         <button onClick={() => { setEditItem(conta); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
                       </>}
                       {conta.status==='confirmado' && <button onClick={() => handleEstorno(conta)} className="erp-btn erp-btn-link erp-btn-sm" style={{ color:'#E65100' }}>↩ Estornar</button>}
-                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>conta.lancIds?.includes(i.id)&&i.baixaCruzadaId); if(f) setCadeiaId(f.baixaCruzadaId) }} className="erp-btn erp-btn-link-purple erp-btn-sm">Ver cadeia</button>}
+                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>(conta.lancIds||[]).includes(i.id)&&i.baixaCruzadaId); if(f?.baixaCruzadaId) setCadeiaId(f.baixaCruzadaId) }} className="erp-btn erp-btn-link-purple erp-btn-sm">Ver cadeia</button>}
                       <button onClick={() => setDeleteItem(conta)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
                     </span>
                   </td>
@@ -262,6 +312,7 @@ export default function ContasReceber() {
       {baixaItem && <BaixaModal conta={baixaItem} onClose={() => setBaixaItem(null)} onDone={refresh} />}
       {deleteItem && <ConfirmModal title="Excluir Conta" message={`Excluir "${deleteItem.descricao}"?`} danger onConfirm={() => setContas(prev => prev.filter(c => c.id!==deleteItem.id))} onClose={() => setDeleteItem(null)} />}
       {cadeiaId && <CadeiaModal id={cadeiaId} onClose={() => setCadeiaId(null)} />}
+      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} />}
     </div>
   )
 }

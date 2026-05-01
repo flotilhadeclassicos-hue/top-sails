@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
-import { formatCurrency, formatDate, currentMonthKey, monthLabel } from '../utils/helpers'
+import { formatCurrencyInt as formatCurrency, formatDate, currentMonthKey, monthLabel } from '../utils/helpers'
+import ChevronKPI from '../components/ui/ChevronKPI'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
 
@@ -106,19 +107,6 @@ export default function Dashboard() {
   const [pedidos] = useLocalState('ts_pedidos', [])
   const [clientes] = useLocalState('ts_clientes', [])
   const [fornecedores] = useLocalState('ts_fornecedores', [])
-  const [financeiro] = useLocalState('ts_financeiro', [])
-  const [caixinha] = useLocalState('ts_caixinha', [])
-  const [offBook] = useLocalState('ts_offBook', [])
-
-  // ── Receitas consolidadas de todas as fontes ──────────────────────────────
-  // Bancos (ts_financeiro) + Caixinha (ts_caixinha) + Off Book sem parteId (ts_offBook)
-  // Todos os lançamentos com tipo='receita', independente da origem
-  const todasReceitas = [
-    ...financeiro.map(i => ({ ...i, _fonte:'financeiro' })),
-    ...caixinha.map(i => ({ ...i, _fonte:'caixinha' })),
-    ...offBook.filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
-  ].filter(i => i.tipo === 'receita')
-
   // ── Financeiro ────────────────────────────────────────────────────────────
   // Contas a receber em atraso (usa vencimento — correto para atraso)
   const recAtrasadas = contasReceber.filter(c => c.status === 'aberto' && c.vencimento < hoje)
@@ -131,15 +119,15 @@ export default function Dashboard() {
   const pagAtrasadas   = contasPagar.filter(c => c.status === 'aberto' && c.vencimento < hoje)
   const valorPagAtraso = pagAtrasadas.reduce((s, c) => s + (c.valor || 0), 0)
 
-  // Faturamento do mês — soma todas as receitas registradas no mês selecionado
-  const fatMes = todasReceitas
-    .filter(i => i.data?.substring(0, 7) === mes)
-    .reduce((s, i) => s + (parseFloat(i.valor) || 0), 0)
+  // Faturamento do mês — ordens com dataEntrega no mês selecionado
+  const fatMes = ordens
+    .filter(o => o.dataEntrega?.substring(0, 7) === mes)
+    .reduce((s, o) => s + (parseFloat(o.valor) || 0), 0)
 
-  // Faturamento acumulado — receitas do ano até o mês selecionado (jan→mes)
-  const fatAcumulado = todasReceitas
-    .filter(i => i.data?.substring(0, 4) === ano && i.data?.substring(0, 7) <= mes)
-    .reduce((s, i) => s + (parseFloat(i.valor) || 0), 0)
+  // Faturamento acumulado — ordens com dataEntrega no ano até o mês selecionado (jan→mes)
+  const fatAcumulado = ordens
+    .filter(o => o.dataEntrega?.substring(0, 4) === ano && o.dataEntrega?.substring(0, 7) <= mes)
+    .reduce((s, o) => s + (parseFloat(o.valor) || 0), 0)
 
   // A receber total em aberto
   const recAbertoTotal = contasReceber
@@ -165,22 +153,22 @@ export default function Dashboard() {
     const ordem = ordens.find(o => o.id === c.ordemId)
     const cli   = clientes.find(cl => cl.id === ordem?.clienteId)
     return { nome: cli?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
-  }).sort((a, b) => a.vencimento?.localeCompare(b.vencimento))
+  }).sort((a, b) => (a.vencimento || '').localeCompare(b.vencimento || ''))
 
   const pagAtrasadasDetalhes = pagAtrasadas.map(c => {
     const forn = fornecedores.find(f => f.id === c.fornecedorId)
     return { nome: forn?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
-  }).sort((a, b) => a.vencimento?.localeCompare(b.vencimento))
+  }).sort((a, b) => (a.vencimento || '').localeCompare(b.vencimento || ''))
 
   const mesLabel = monthLabel(mes)
 
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span><span className="cur">Dashboard</span>
+        <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Dashboard</span>
       </nav>
       <div className="erp-toolbar">
-        <h1 className="erp-page-title">Dashboard</h1>
+        <h1 className="erp-page-title">Dashboard ⛵</h1>
         <span style={{ fontSize:'11px', color:'#8A99A8' }}>
           {new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}
         </span>
@@ -190,7 +178,7 @@ export default function Dashboard() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px', paddingBottom:'8px', borderBottom:'2px solid #D8DDE6' }}>
         <div>
           <div style={{ fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>Financeiro</div>
-          <div style={{ fontSize:'11px', color:'#8A99A8', marginTop:'2px' }}>Faturamento baseado em recebimentos realizados</div>
+          <div style={{ fontSize:'11px', color:'#8A99A8', marginTop:'2px' }}>Faturamento baseado na data de entrega das ordens</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
           <span style={{ fontSize:'11px', color:'#54698D', fontWeight:600 }}>Período:</span>
@@ -198,7 +186,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'24px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'24px' }}>
         <KpiCard
           label="Clientes em Atraso"
           value={clientesAtrasadosIds.size}
@@ -215,22 +203,36 @@ export default function Dashboard() {
           color="orange"
           icon="⚠"
         />
-        <KpiCard
-          label={`Faturamento — ${mesLabel}`}
-          value={formatCurrency(fatMes)}
-          sub={formatCurrency(recAbertoTotal)}
-          subLabel="a receber em aberto"
-          color="blue"
-          icon="📅"
-        />
-        <KpiCard
-          label={`Acumulado Jan–${mesLabel}`}
-          value={formatCurrency(fatAcumulado)}
-          sub={`${ano}`}
-          subLabel="ano corrente"
-          color="green"
-          icon="📈"
-        />
+        {/* Faturamento: mês + acumulado numa só caixa */}
+        <div style={{ background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px',
+          padding:'14px 16px', boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
+            <span style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#0050A0' }}>
+              Faturamento
+            </span>
+            <span style={{ fontSize:'16px', opacity:0.7 }}>📈</span>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+            <div>
+              <div style={{ fontSize:'10px', color:'#0050A0', fontWeight:600, marginBottom:'2px' }}>{mesLabel}</div>
+              <div style={{ fontSize:'20px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1 }}>
+                {formatCurrency(fatMes)}
+              </div>
+              <div style={{ fontSize:'10px', color:'#0050A0', opacity:0.8, marginTop:'3px' }}>
+                {formatCurrency(recAbertoTotal)} a receber
+              </div>
+            </div>
+            <div style={{ borderLeft:'1px solid #A8C8E8', paddingLeft:'10px' }}>
+              <div style={{ fontSize:'10px', color:'#0050A0', fontWeight:600, marginBottom:'2px' }}>Jan–{mesLabel}</div>
+              <div style={{ fontSize:'20px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1 }}>
+                {formatCurrency(fatAcumulado)}
+              </div>
+              <div style={{ fontSize:'10px', color:'#0050A0', opacity:0.8, marginTop:'3px' }}>
+                acumulado {ano}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Listas de atraso */}
@@ -251,67 +253,28 @@ export default function Dashboard() {
 
       {/* ── OPERACIONAL — ORDENS ── */}
       <SectionHeader title="Operacional — Ordens de Serviço" />
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'24px' }}>
-        <KpiCard
-          label="Aguardando"
-          value={ordAguardando.length}
-          sub={formatCurrency(somaOS(ordAguardando))}
-          subLabel="em carteira"
-          color="orange"
-          icon="⏳"
-        />
-        <KpiCard
-          label="Em Execução"
-          value={ordExecucao.length}
-          sub={formatCurrency(somaOS(ordExecucao))}
-          subLabel="em andamento"
-          color="blue"
-          icon="🔧"
-        />
-        <KpiCard
-          label="Prontas para Entrega"
-          value={ordProntas.length}
-          sub={formatCurrency(somaOS(ordProntas))}
-          subLabel="aguardando retirada"
-          color="green"
-          icon="✅"
-        />
-        <KpiCard
-          label="Entregues"
-          value={ordEntregues.length}
-          sub={formatCurrency(somaOS(ordEntregues))}
-          subLabel="concluídas"
-          color="gray"
-          icon="📦"
+      <div style={{ marginBottom:'24px' }}>
+        <ChevronKPI
+          ariaLabel="Pipeline de status das Ordens de Serviço"
+          stages={[
+            { label:'Aguardando',        icon:'⏳', count:ordAguardando.length, valor:somaOS(ordAguardando), color:'orange' },
+            { label:'Em Execução',       icon:'🔧', count:ordExecucao.length,   valor:somaOS(ordExecucao),   color:'blue'   },
+            { label:'Pronta p/ Entrega', icon:'✅', count:ordProntas.length,    valor:somaOS(ordProntas),    color:'green'  },
+            { label:'Entregues',         icon:'📦', count:ordEntregues.length,  valor:somaOS(ordEntregues),  color:'gray'   },
+          ]}
         />
       </div>
 
       {/* ── OPERACIONAL — PEDIDOS ── */}
       <SectionHeader title="Operacional — Pedidos (Orçamentos)" />
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'16px' }}>
-        <KpiCard
-          label="Enviados ao Cliente"
-          value={pedEnviados.length}
-          sub={formatCurrency(somaPed(pedEnviados))}
-          subLabel="aguardando aprovação"
-          color="blue"
-          icon="📤"
-        />
-        <KpiCard
-          label="Aprovados"
-          value={pedAprovados.length}
-          sub={formatCurrency(somaPed(pedAprovados))}
-          subLabel="com OS gerada"
-          color="green"
-          icon="✔"
-        />
-        <KpiCard
-          label="Em Elaboração"
-          value={pedAguardando.length}
-          sub={formatCurrency(somaPed(pedAguardando))}
-          subLabel="aguardando envio"
-          color="orange"
-          icon="📝"
+      <div style={{ marginBottom:'16px' }}>
+        <ChevronKPI
+          ariaLabel="Pipeline de status dos Pedidos"
+          stages={[
+            { label:'Em Elaboração',       icon:'📝', count:pedAguardando.length, valor:somaPed(pedAguardando), color:'orange' },
+            { label:'Enviado ao Cliente',  icon:'📤', count:pedEnviados.length,   valor:somaPed(pedEnviados),   color:'blue'   },
+            { label:'Aprovado',            icon:'✔',  count:pedAprovados.length,  valor:somaPed(pedAprovados),  color:'green'  },
+          ]}
         />
       </div>
     </div>

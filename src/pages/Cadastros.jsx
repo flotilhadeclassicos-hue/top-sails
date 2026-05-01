@@ -6,11 +6,14 @@ import Modal from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 
 const TABS = [
+  { id: 'empresa',      label: 'Empresa'              },
   { id: 'categorias',   label: 'Cat. Receitas'        },
   { id: 'catDespesas',  label: 'Cat. Despesas'        },
   { id: 'clientes',     label: 'Clientes'             },
   { id: 'fornecedores', label: 'Fornecedores'         },
   { id: 'partes',       label: 'Partes Relacionadas'  },
+  { id: 'produtos',     label: 'Produtos'             },
+  { id: 'template',     label: 'Template PDF'         },
   { id: 'usuarios',     label: 'Usuários'             },
 ]
 
@@ -18,7 +21,7 @@ function Toolbar({ title, onAdd, breadcrumb }) {
   return (
     <>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span>
+        <span>TOP SAIL</span><span className="sep">/</span>
         <span>Cadastros</span><span className="sep">/</span>
         <span className="cur">{breadcrumb}</span>
       </nav>
@@ -49,6 +52,113 @@ function SearchBar({ value, onChange, placeholder, children }) {
       <input value={value} onChange={onChange} placeholder={placeholder} className="erp-input" style={{ width:'260px' }} />
       {children}
     </div>
+  )
+}
+
+// ── Empresa ───────────────────────────────────────────────────────────────────
+const EMPRESA_VAZIA = {
+  nome: '', cnpj: '', endereco: '', cidade: '', uf: '', cep: '',
+  telefone: '', email: '', pix: '', banco: '', agencia: '', conta: '',
+}
+
+function Empresa() {
+  const [empresa, setEmpresa] = useLocalState('ts_empresa', EMPRESA_VAZIA)
+  const [form,    setForm]    = useState(() => ({ ...EMPRESA_VAZIA, ...empresa }))
+  const [saving,  setSaving]  = useState(false)
+  const [msg,     setMsg]     = useState(null)
+
+  // Sincroniza form quando os dados chegam do Supabase
+  const [carregado, setCarregado] = useState(false)
+  if (!carregado && empresa && Object.keys(empresa).some(k => empresa[k])) {
+    setForm({ ...EMPRESA_VAZIA, ...empresa })
+    setCarregado(true)
+  }
+
+  const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true); setMsg(null)
+    try {
+      await writeLocal('ts_empresa', form)
+      setMsg({ tipo:'ok', texto:'Dados da empresa salvos com sucesso.' })
+    } catch {
+      setMsg({ tipo:'erro', texto:'Erro ao salvar. Verifique a conexão.' })
+    } finally { setSaving(false) }
+  }
+
+  const Input = ({ label, field, placeholder, col }) => (
+    <div style={{ gridColumn: col, marginBottom:'12px' }}>
+      <label className="erp-label">{label}</label>
+      <input value={form[field]} onChange={e => set(field, e.target.value)}
+        placeholder={placeholder} className="erp-input" />
+    </div>
+  )
+
+  return (
+    <>
+      <nav className="erp-bc">
+        <span>TOP SAIL</span><span className="sep">/</span>
+        <span>Cadastros</span><span className="sep">/</span>
+        <span className="cur">Empresa</span>
+      </nav>
+      <div className="erp-toolbar">
+        <h1 className="erp-page-title">Dados da Empresa</h1>
+      </div>
+
+      <form onSubmit={handleSave}>
+        {/* Identificação */}
+        <div style={{ marginBottom:'6px', fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em' }}>Identificação</div>
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:'0 16px' }}>
+          <Input label="Razão Social / Nome" field="nome"     placeholder="TOP SAIL Náutica Ltda."       col="1" />
+          <Input label="CNPJ"                field="cnpj"     placeholder="00.000.000/0001-00"            col="2" />
+        </div>
+
+        {/* Endereço */}
+        <div style={{ marginBottom:'6px', marginTop:'4px', fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em' }}>Endereço</div>
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:'0 16px' }}>
+          <Input label="Logradouro"  field="endereco" placeholder="Rua das Embarcações, 123" col="1" />
+          <Input label="Cidade"      field="cidade"   placeholder="São Paulo"                col="2" />
+          <Input label="UF"          field="uf"       placeholder="SP"                       col="3" />
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0 16px' }}>
+          <Input label="CEP" field="cep" placeholder="00000-000" col="1" />
+        </div>
+
+        {/* Contato */}
+        <div style={{ marginBottom:'6px', marginTop:'4px', fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em' }}>Contato</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+          <Input label="Telefone" field="telefone" placeholder="(00) 00000-0000"       col="1" />
+          <Input label="E-mail"   field="email"    placeholder="contato@empresa.com.br" col="2" />
+        </div>
+
+        {/* Dados bancários */}
+        <div style={{ marginBottom:'6px', marginTop:'4px', fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em' }}>Dados Bancários</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0 16px' }}>
+          <Input label="PIX"     field="pix"     placeholder="Chave PIX (e-mail, CPF, CNPJ ou telefone)" col="1 / -1" />
+          <Input label="Banco"   field="banco"   placeholder="Ex: Banco do Brasil"   col="1" />
+          <Input label="Agência" field="agencia" placeholder="0001-1"                col="2" />
+          <Input label="Conta"   field="conta"   placeholder="00000-0"               col="3" />
+        </div>
+
+        {/* Ações */}
+        {msg && (
+          <div style={{
+            padding:'8px 12px', marginBottom:'12px', borderRadius:'2px', fontSize:'12px',
+            background: msg.tipo==='ok' ? '#E8F5E9' : '#FDECEA',
+            border: `1px solid ${msg.tipo==='ok' ? '#A5D6A7' : '#E8A09A'}`,
+            color: msg.tipo==='ok' ? '#1B5E20' : '#C62828',
+          }}>
+            {msg.texto}
+          </div>
+        )}
+        <div style={{ display:'flex', justifyContent:'flex-end', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
+          <button type="submit" disabled={saving} className="erp-btn erp-btn-primary">
+            {saving ? 'Salvando...' : 'Salvar Dados da Empresa'}
+          </button>
+        </div>
+      </form>
+    </>
   )
 }
 
@@ -671,6 +781,250 @@ function PartesRelacionadas() {
   )
 }
 
+// ── Produtos ──────────────────────────────────────────────────────────────────
+function Produtos() {
+  const [items, setItems] = useLocalState('ts_produtos', [])
+  const [open,   setOpen]   = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [search, setSearch] = useState('')
+  const [form, setForm] = useState({ nome:'', classificacao:'', tipo:'', fabricacao:'Revenda', valor:'' })
+
+  const openNew  = () => { setForm({ nome:'', classificacao:'', tipo:'', fabricacao:'Revenda', valor:'' }); setEditId(null); setOpen(true) }
+  const openEdit = (i) => { setForm({ nome:i.nome, classificacao:i.classificacao||'', tipo:i.tipo||'', fabricacao:i.fabricacao||'Revenda', valor:i.valor||'' }); setEditId(i.id); setOpen(true) }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!form.nome.trim()) return
+    const p = { ...form, valor: parseFloat(form.valor) || 0 }
+    editId
+      ? setItems(prev => prev.map(i => i.id === editId ? { ...i, ...p } : i))
+      : setItems(prev => [...prev, { id:uuid(), ...p }])
+    setOpen(false)
+  }
+
+  const filtered = items.filter(i =>
+    !search ||
+    i.nome.toLowerCase().includes(search.toLowerCase()) ||
+    i.classificacao?.toLowerCase().includes(search.toLowerCase()) ||
+    i.tipo?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <>
+      <Toolbar title="Produtos" breadcrumb="Produtos" onAdd={openNew} />
+      <SearchBar value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, classificação ou tipo..." />
+
+      <div className="erp-panel">
+        <table className="erp-table">
+          <thead><tr>
+            <th>Nome</th>
+            <th style={{ width:'140px' }}>Classificação</th>
+            <th style={{ width:'120px' }}>Tipo</th>
+            <th style={{ width:'100px' }}>Fabricação</th>
+            <th className="right" style={{ width:'110px' }}>Valor</th>
+            <th style={{ width:'100px' }}>Ações</th>
+          </tr></thead>
+          <tbody>
+            {filtered.length === 0 && <tr className="empty"><td colSpan={6}>Nenhum produto encontrado</td></tr>}
+            {filtered.map(i => (
+              <tr key={i.id}>
+                <td style={{ fontWeight:500 }}>{i.nome}</td>
+                <td className="muted">{i.classificacao || '—'}</td>
+                <td className="muted">{i.tipo || '—'}</td>
+                <td className="muted">{i.fabricacao || '—'}</td>
+                <td className="right" style={{ fontWeight:600 }}>
+                  {i.valor ? `R$ ${Number(i.valor).toFixed(2).replace('.',',')}` : '—'}
+                </td>
+                <td className="right">
+                  <span style={{ display:'flex', gap:'12px', justifyContent:'flex-end' }}>
+                    <button onClick={() => openEdit(i)} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
+                    <button onClick={() => setItems(p => p.filter(x => x.id !== i.id))} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {open && (
+        <Modal title={editId ? 'Editar Produto' : 'Novo Produto'} onClose={() => setOpen(false)}>
+          <form onSubmit={handleSubmit}>
+            <FField label="Nome *">
+              <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome:e.target.value }))} required className="erp-input" placeholder="Nome do produto" />
+            </FField>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+              <FField label="Classificação">
+                <input value={form.classificacao} onChange={e => setForm(f => ({ ...f, classificacao:e.target.value }))} className="erp-input" placeholder="Ex: Náutico, Elétrico..." />
+              </FField>
+              <FField label="Tipo">
+                <input value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo:e.target.value }))} className="erp-input" placeholder="Ex: Peça, Material..." />
+              </FField>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+              <FField label="Fabricação">
+                <select value={form.fabricacao} onChange={e => setForm(f => ({ ...f, fabricacao:e.target.value }))} className="erp-select">
+                  <option value="Revenda">Revenda</option>
+                  <option value="Própria">Própria</option>
+                </select>
+              </FField>
+              <FField label="Valor (R$)">
+                <input type="number" min="0" step="0.01" value={form.valor} onChange={e => setForm(f => ({ ...f, valor:e.target.value }))} className="erp-input" placeholder="0,00" />
+              </FField>
+            </div>
+            <FormActions onCancel={() => setOpen(false)} editId={editId} />
+          </form>
+        </Modal>
+      )}
+    </>
+  )
+}
+
+// ── Template PDF ──────────────────────────────────────────────────────────────
+function TemplatePDF() {
+  const [template, setTemplate] = useLocalState('ts_template_pedido', {})
+  const [preview,  setPreview]  = useState(null)   // imagem recém-selecionada (ainda não salva)
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState(null)
+
+  const imagemSalva = template?.imagem || null
+
+  const handleFile = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const allowed = ['image/png','image/jpeg','image/jpg','image/webp']
+    if (!allowed.includes(file.type)) {
+      setMsg({ tipo:'erro', texto:'Formato não suportado. Use PNG, JPG ou WebP. Para arquivos Word, exporte como imagem primeiro.' })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg({ tipo:'erro', texto:'Arquivo muito grande. Tamanho máximo: 5 MB.' })
+      return
+    }
+    setMsg(null)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const handleSave = async () => {
+    if (!preview) return
+    setSaving(true); setMsg(null)
+    try {
+      await writeLocal('ts_template_pedido', { imagem: preview })
+      setPreview(null)
+      setMsg({ tipo:'ok', texto:'Template salvo com sucesso.' })
+    } catch {
+      setMsg({ tipo:'erro', texto:'Erro ao salvar. Verifique a conexão.' })
+    } finally { setSaving(false) }
+  }
+
+  const handleRemove = async () => {
+    setSaving(true); setMsg(null)
+    try {
+      await writeLocal('ts_template_pedido', {})
+      setPreview(null)
+      setMsg({ tipo:'ok', texto:'Template removido.' })
+    } catch {
+      setMsg({ tipo:'erro', texto:'Erro ao remover.' })
+    } finally { setSaving(false) }
+  }
+
+  const imagem = preview || imagemSalva
+
+  return (
+    <>
+      <nav className="erp-bc">
+        <span>TOP SAIL</span><span className="sep">/</span>
+        <span>Cadastros</span><span className="sep">/</span>
+        <span className="cur">Template PDF</span>
+      </nav>
+      <div className="erp-toolbar">
+        <h1 className="erp-page-title">Template do Pedido / Orçamento</h1>
+      </div>
+
+      {/* Instruções */}
+      <div style={{ padding:'12px 14px', marginBottom:'16px', background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px', fontSize:'12px', color:'#0050A0', lineHeight:'1.7' }}>
+        <strong>Como usar:</strong> importe a imagem que será usada como fundo do PDF do pedido.<br />
+        Formatos aceitos: <strong>PNG, JPG, WebP</strong> (máx. 5 MB).<br />
+        Para usar um modelo Word: abra no Word → <em>Arquivo → Exportar → Alterar tipo de arquivo → PNG</em> ou tire um print da página.
+      </div>
+
+      {/* Área de upload */}
+      <div style={{ display:'flex', gap:'24px', alignItems:'flex-start', flexWrap:'wrap' }}>
+        <div style={{ flex:'0 0 auto' }}>
+          <label className="erp-label">Arquivo de imagem</label>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            onChange={handleFile}
+            style={{ display:'block', marginBottom:'12px', fontSize:'12px' }}
+          />
+          <div style={{ display:'flex', gap:'8px' }}>
+            <button
+              onClick={handleSave}
+              disabled={!preview || saving}
+              className="erp-btn erp-btn-primary erp-btn-sm"
+            >
+              {saving ? 'Salvando...' : 'Salvar template'}
+            </button>
+            {imagemSalva && (
+              <button
+                onClick={handleRemove}
+                disabled={saving}
+                className="erp-btn erp-btn-link-danger erp-btn-sm"
+              >
+                Remover template atual
+              </button>
+            )}
+          </div>
+
+          {msg && (
+            <div style={{
+              marginTop:'10px', padding:'8px 10px', borderRadius:'2px', fontSize:'11px',
+              background: msg.tipo==='ok' ? '#E8F5E9' : '#FDECEA',
+              border: `1px solid ${msg.tipo==='ok' ? '#A5D6A7' : '#E8A09A'}`,
+              color: msg.tipo==='ok' ? '#1B5E20' : '#C62828',
+            }}>
+              {msg.texto}
+            </div>
+          )}
+
+          {!imagemSalva && !preview && (
+            <div style={{ marginTop:'12px', fontSize:'11px', color:'#8A99A8', fontStyle:'italic' }}>
+              Nenhum template salvo. O PDF usará o layout padrão do sistema.
+            </div>
+          )}
+        </div>
+
+        {/* Preview */}
+        {imagem && (
+          <div style={{ flex:'1 1 300px' }}>
+            <label className="erp-label">
+              {preview ? 'Pré-visualização (não salvo ainda)' : 'Template atual salvo'}
+            </label>
+            <div style={{
+              border: `2px dashed ${preview ? '#0070D2' : '#88C088'}`,
+              borderRadius:'2px', padding:'8px', background:'#F9FBFC', display:'inline-block',
+            }}>
+              <img
+                src={imagem}
+                alt="Template PDF"
+                style={{ display:'block', maxWidth:'420px', maxHeight:'550px', objectFit:'contain' }}
+              />
+            </div>
+            {preview && (
+              <div style={{ fontSize:'11px', color:'#0070D2', marginTop:'4px' }}>
+                Clique em "Salvar template" para confirmar.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Cadastros() {
   const [tab, setTab] = useState('categorias')
@@ -685,11 +1039,14 @@ export default function Cadastros() {
         ))}
       </div>
 
+      {tab === 'empresa'     && <Empresa              />}
       {tab === 'categorias'  && <Categorias          />}
       {tab === 'catDespesas' && <CategoriasDespesas  />}
       {tab === 'clientes'    && <Clientes            />}
       {tab === 'fornecedores'&& <Fornecedores        />}
       {tab === 'partes'      && <PartesRelacionadas  />}
+      {tab === 'produtos'    && <Produtos            />}
+      {tab === 'template'    && <TemplatePDF         />}
       {tab === 'usuarios'    && <Usuarios            />}
     </div>
   )

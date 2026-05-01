@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { readLocal } from '../../hooks/useLocalState'
+import { useLocalState } from '../../hooks/useLocalState'
 import { formatDate, formatCurrency } from '../../utils/helpers'
 import Badge from '../../components/ui/Badge'
 
@@ -29,13 +29,16 @@ export default function ConsolidadoView() {
   const [tipoFilter, setTipoFilter] = useState('')
   const [fonteFilter,setFonteFilter]= useState('')
 
-  const categorias = readLocal('ts_categorias', [])
+  const [categorias]  = useLocalState('ts_categorias', [])
+  const [financeiro]  = useLocalState('ts_financeiro', [])
+  const [caixinha]    = useLocalState('ts_caixinha',   [])
+  const [offBookRaw]  = useLocalState('ts_offBook',    [])
 
   // Monta lista consolidada com fonte
   const all = [
-    ...readLocal('ts_financeiro', []).map(i => ({ ...i, _fonte:'financeiro' })),
-    ...readLocal('ts_caixinha',   []).map(i => ({ ...i, _fonte:'caixinha'   })),
-    ...readLocal('ts_offBook',    []).filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
+    ...financeiro.map(i => ({ ...i, _fonte:'financeiro' })),
+    ...caixinha.map(i =>   ({ ...i, _fonte:'caixinha'   })),
+    ...offBookRaw.filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
   ].sort((a, b) => (b.data || '').localeCompare(a.data || ''))
 
   const filtered = all.filter(i => {

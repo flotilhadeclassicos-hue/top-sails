@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLocalState, readLocal } from '../hooks/useLocalState'
-import { uuid, formatCurrency, getMonthKey, monthLabel } from '../utils/helpers'
+import { uuid, formatCurrencyInt as formatCurrency, getMonthKey, monthLabel } from '../utils/helpers'
 
 // ── Fonte de dados ────────────────────────────────────────────────────────────
 function buildAll(excluirIds) {
@@ -71,7 +71,170 @@ function ConfigSection({ title, items, onMove, onAddSubtotal, onRemoveSubtotal, 
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
+// ── Relatório de Vendas (Tabela Dinâmica) ─────────────────────────────────────
+function PivotVendas() {
+  const [pedidos]  = useLocalState('ts_pedidos', [])
+  const [rowDim,   setRowDim]   = useState('cliente')     // 'produto' | 'cliente' | 'mes'
+  const [colDim,   setColDim]   = useState('mes')         // 'produto' | 'cliente' | 'mes' | 'nenhum'
+  const [measure,  setMeasure]  = useState('faturamento') // 'faturamento' | 'quantidade'
+
+  const clientes = readLocal('ts_clientes', [])
+
+  // Linha plana: um registro por item de pedido
+  const flatRows = useMemo(() =>
+    pedidos.flatMap(p => {
+      const cli = clientes.find(c => c.id === p.clienteId)
+      return (p.itens || [])
+        .filter(i => i.descricao?.trim())
+        .map(i => ({
+          produto:     i.descricao.trim(),
+          cliente:     cli?.nome || '—',
+          mes:         p.data?.substring(0, 7) || '—',
+          faturamento: parseFloat(i.precoTotal)  || 0,
+          quantidade:  parseFloat(i.quantidade)  || 0,
+        }))
+    }),
+    [pedidos]
+  )
+
+  const DIMS = { produto:'Produto', cliente:'Cliente', mes:'Mês' }
+
+  const getVals = (dim) => {
+    const s = [...new Set(flatRows.map(r => r[dim]))]
+    return dim === 'mes' ? s.sort() : s.sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }
+
+  const rowValues = useMemo(() => getVals(rowDim), [flatRows, rowDim])
+  const colValues = useMemo(() => colDim !== 'nenhum' ? getVals(colDim) : [], [flatRows, colDim])
+
+  const pivot = useMemo(() => {
+    const p = {}
+    for (const r of flatRows) {
+      const rv = r[rowDim]
+      const cv = colDim !== 'nenhum' ? r[colDim] : '_'
+      if (!p[rv]) p[rv] = {}
+      p[rv][cv] = (p[rv][cv] || 0) + r[measure]
+    }
+    return p
+  }, [flatRows, rowDim, colDim, measure])
+
+  const cell      = (rv, cv) => pivot[rv]?.[cv] || 0
+  const rowTotal  = (rv) => (colDim !== 'nenhum' ? colValues : ['_']).reduce((s, cv) => s + cell(rv, cv), 0)
+  const colTotal  = (cv) => rowValues.reduce((s, rv) => s + cell(rv, cv), 0)
+  const grandTotal = rowValues.reduce((s, rv) => s + rowTotal(rv), 0)
+
+  const fmt = (v) => measure === 'faturamento'
+    ? new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 }).format(v)
+    : new Intl.NumberFormat('pt-BR', { maximumFractionDigits:1 }).format(v)
+
+  const colHeader = (cv) => {
+    if (colDim === 'mes') {
+      const [y, m] = cv.split('-')
+      return `${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1]}/${y.slice(2)}`
+    }
+    return cv
+  }
+
+  const invert = () => {
+    if (colDim === 'nenhum') return
+    const tmp = rowDim; setRowDim(colDim); setColDim(tmp)
+  }
+
+  const dimOpts = Object.entries(DIMS).filter(([k]) => k !== rowDim || colDim === 'nenhum')
+
+  const Sel = ({ label, value, onChange, opts }) => (
+    <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+      <span style={{ fontSize:'11px', color:'#54698D', fontWeight:600 }}>{label}</span>
+      <select value={value} onChange={e => onChange(e.target.value)} className="erp-select" style={{ width:'130px' }}>
+        {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </div>
+  )
+
+  const thStyle = { background:'#F0F2F5', border:'1px solid #D8DDE6', padding:'6px 10px',
+    fontSize:'11px', fontWeight:700, color:'#16191F', whiteSpace:'nowrap' }
+  const tdStyle = (highlight) => ({
+    border:'1px solid #E4E7EA', padding:'5px 10px', fontSize:'12px',
+    textAlign:'right', fontVariantNumeric:'tabular-nums',
+    background: highlight ? '#F0F2F5' : 'transparent',
+    fontWeight: highlight ? 700 : 400,
+    color: highlight ? '#16191F' : '#54698D',
+  })
+
+  if (flatRows.length === 0) {
+    return <div style={{ padding:'40px', textAlign:'center', color:'#8A99A8', fontSize:'13px' }}>
+      Nenhum item de pedido encontrado. Crie pedidos com itens para ver o relatório.
+    </div>
+  }
+
+  return (
+    <div>
+      {/* Controles */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:'12px', alignItems:'center', marginBottom:'16px',
+        padding:'12px 14px', background:'#F4F6F8', border:'1px solid #D8DDE6', borderRadius:'2px' }}>
+        <Sel label="Linhas (↕)" value={rowDim} onChange={v => { setRowDim(v); if (v === colDim) setColDim('nenhum') }}
+          opts={Object.entries(DIMS)} />
+        <Sel label="Colunas (↔)" value={colDim}
+          onChange={v => { setColDim(v); if (v === rowDim) setRowDim(Object.keys(DIMS).find(k => k !== v)) }}
+          opts={[...Object.entries(DIMS).filter(([k]) => k !== rowDim), ['nenhum', '— Sem coluna —']]} />
+        <Sel label="Medida" value={measure} onChange={setMeasure}
+          opts={[['faturamento','Faturamento (R$)'], ['quantidade','Quantidade']]} />
+        <button onClick={invert} disabled={colDim === 'nenhum'} className="erp-btn erp-btn-secondary erp-btn-sm"
+          title="Inverter linhas e colunas">
+          ⇄ Inverter eixos
+        </button>
+        <span style={{ fontSize:'11px', color:'#8A99A8', marginLeft:'auto' }}>
+          {flatRows.length} itens · {pedidos.length} pedidos
+        </span>
+      </div>
+
+      {/* Tabela pivot */}
+      <div style={{ overflowX:'auto', border:'1px solid #D8DDE6', borderRadius:'2px' }}>
+        <table style={{ borderCollapse:'collapse', width:'100%', fontSize:'12px' }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, textAlign:'left', minWidth:'160px' }}>{DIMS[rowDim]}</th>
+              {colValues.map(cv => (
+                <th key={cv} style={thStyle}>{colHeader(cv)}</th>
+              ))}
+              <th style={{ ...thStyle, color:'#0050A0' }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rowValues.map((rv, ri) => (
+              <tr key={rv} style={{ background: ri % 2 === 0 ? '#fff' : '#FAFBFC' }}
+                onMouseEnter={e => e.currentTarget.style.background='#EAF3FB'}
+                onMouseLeave={e => e.currentTarget.style.background = ri % 2 === 0 ? '#fff' : '#FAFBFC'}>
+                <td style={{ border:'1px solid #E4E7EA', padding:'5px 10px', fontSize:'12px',
+                  fontWeight:500, color:'#16191F', whiteSpace:'nowrap' }}>{rv}</td>
+                {colValues.map(cv => (
+                  <td key={cv} style={tdStyle(false)}>
+                    {cell(rv, cv) > 0 ? fmt(cell(rv, cv)) : <span style={{ color:'#C9D3DD' }}>—</span>}
+                  </td>
+                ))}
+                <td style={tdStyle(true)}>{fmt(rowTotal(rv))}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ background:'#EAF3FB' }}>
+              <td style={{ ...thStyle, textAlign:'left', color:'#0050A0' }}>Total</td>
+              {colValues.map(cv => (
+                <td key={cv} style={{ ...thStyle, color:'#0070D2', textAlign:'right' }}>{fmt(colTotal(cv))}</td>
+              ))}
+              <td style={{ ...thStyle, color:'#0070D2', textAlign:'right', fontSize:'13px' }}>{fmt(grandTotal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── Fluxo de Caixa ────────────────────────────────────────────────────────────
 export default function Relatorios() {
+  const [tabRel, setTabRel] = useState('fluxo') // 'fluxo' | 'vendas'
+
   const [ano,          setAno]          = useState(new Date().getFullYear())
   const [inclParteRel, setInclParteRel] = useState(false)
   const [showConfig,   setShowConfig]   = useState(false)
@@ -208,8 +371,19 @@ export default function Relatorios() {
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span><span className="cur">Relatórios</span>
+        <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Relatórios</span>
       </nav>
+      <div className="erp-toolbar" style={{ marginBottom:'0' }}>
+        <h1 className="erp-page-title">Relatórios</h1>
+      </div>
+
+      <div className="erp-tabs" style={{ marginBottom:'16px' }}>
+        <button onClick={() => setTabRel('fluxo')}   className={`erp-tab ${tabRel==='fluxo'  ?'active':''}`}>Fluxo de Caixa</button>
+        <button onClick={() => setTabRel('vendas')}  className={`erp-tab ${tabRel==='vendas' ?'active':''}`}>Relatório de Vendas</button>
+      </div>
+
+      {tabRel === 'vendas' && <PivotVendas />}
+      {tabRel === 'fluxo' && <div>
       <div className="erp-toolbar">
         <h1 className="erp-page-title">Fluxo de Caixa Consolidado</h1>
         <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
@@ -266,20 +440,10 @@ export default function Relatorios() {
             {/* ── CRÉDITOS ── */}
             <tr><td colSpan={months.length+2} style={SEC('#F0F7F0','#2E7D32','#2E7D32')}>▲ CRÉDITOS</td></tr>
             {renderRows(creditItems, 'receita', '#2E7D32')}
-            <tr style={{ background:'#D6EDD6' }}>
-              <td style={{ ...TDL, background:'#D6EDD6', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#1A5C1A' }}>Total Créditos</td>
-              {months.map(m => <td key={m} style={{ ...TD, background:'#D6EDD6', color:'#1A5C1A', fontWeight:700 }}>{fmt(sectionTotal('receita', m))}</td>)}
-              <td style={{ ...TD, background:'#B8DDB8', color:'#1A5C1A', fontWeight:700 }}>{fmt(sectionTotal('receita', null))}</td>
-            </tr>
 
             {/* ── DÉBITOS ── */}
             <tr><td colSpan={months.length+2} style={SEC('#FDF0F0','#C62828','#C62828')}>▼ DÉBITOS</td></tr>
             {renderRows(debitItems, 'despesa', '#C62828')}
-            <tr style={{ background:'#F5C8C8' }}>
-              <td style={{ ...TDL, background:'#F5C8C8', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#8B0000' }}>Total Débitos</td>
-              {months.map(m => <td key={m} style={{ ...TD, background:'#F5C8C8', color:'#8B0000', fontWeight:700 }}>{fmt(sectionTotal('despesa', m))}</td>)}
-              <td style={{ ...TD, background:'#EBA8A8', color:'#8B0000', fontWeight:700 }}>{fmt(sectionTotal('despesa', null))}</td>
-            </tr>
 
             {/* ── PARTE RELACIONADA (seção própria, quando toggle ativo) ── */}
             {inclParteRel && prCat && (() => {
@@ -337,6 +501,7 @@ export default function Relatorios() {
           </tbody>
         </table>
       </div>
+      </div>} {/* fim tabRel === 'fluxo' */}
     </div>
   )
 }

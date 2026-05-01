@@ -23,7 +23,7 @@ export default function Login() {
       <div style={{ width:'340px' }}>
         <div style={{ background:'#1C2833', padding:'28px 32px 24px', borderRadius:'2px 2px 0 0', textAlign:'center' }}>
           <div style={{ fontSize:'28px', marginBottom:'8px' }}>⚓</div>
-          <div style={{ color:'#FFFFFF', fontSize:'16px', fontWeight:700, letterSpacing:'-0.01em' }}>Top Sails</div>
+          <div style={{ color:'#FFFFFF', fontSize:'16px', fontWeight:700, letterSpacing:'-0.01em' }}>TOP SAIL</div>
           <div style={{ color:'#7F8C9A', fontSize:'11px', marginTop:'3px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
             Sistema de Gestão Náutica
           </div>

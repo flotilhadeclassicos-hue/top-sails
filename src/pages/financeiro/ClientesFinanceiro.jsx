@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { readLocal } from '../../hooks/useLocalState'
-import { formatCurrency } from '../../utils/helpers'
+import { useLocalState } from '../../hooks/useLocalState'
+import { formatCurrency, formatDate } from '../../utils/helpers'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 
@@ -14,16 +14,17 @@ function StatCard({ label, value, cls, isCount }) {
 }
 
 function DetalheModal({ cliente, onClose }) {
-  const ordens  = readLocal('ts_ordens', [])
-  const contas  = readLocal('ts_contasReceber', [])
+  const [ordens] = useLocalState('ts_ordens', [])
+  const [contas] = useLocalState('ts_contasReceber', [])
 
-  const rows = ordens
-    .filter(o => o.clienteId === cliente.id)
-    .map(o => {
-      const conta = contas.find(c => c.ordemId === o.id)
-      return { ordem: o, conta }
-    })
-    .filter(r => r.conta) // apenas OS com conta vinculada
+  // Todas as contas vinculadas ao cliente via ordemId
+  const ordensCliente = ordens.filter(o => o.clienteId === cliente.id)
+  const contasCliente = contas.filter(c =>
+    ordensCliente.some(o => o.id === c.ordemId)
+  )
+
+  // Contas sem ordemId mas com pedidoId vinculado ao cliente (parcelas de pedido)
+  // já estão cobertas pelo ordemId, pois o ContasReceberModal sempre seta ordemId
 
   return (
     <Modal title={`Contas a Receber — ${cliente.nome}`} onClose={onClose} size="lg">
@@ -37,23 +38,23 @@ function DetalheModal({ cliente, onClose }) {
             <th className="right" style={{ width:'120px' }}>Valor</th>
           </tr></thead>
           <tbody>
-            {rows.length === 0 && (
+            {contasCliente.length === 0 && (
               <tr className="empty"><td colSpan={5}>Nenhuma conta encontrada</td></tr>
             )}
-            {rows.map(({ ordem, conta }) => (
-              <tr key={conta.id}>
-                <td className="mono">{ordem.numero}</td>
-                <td>{conta.descricao}</td>
-                <td className="muted">{conta.vencimento
-                  ? conta.vencimento.split('-').reverse().join('/')
-                  : '—'}
-                </td>
-                <td><Badge value={conta.status} /></td>
-                <td className={`right ${conta.status === 'aberto' ? 'debit' : 'credit'}`} style={{ fontWeight:600 }}>
-                  {formatCurrency(conta.valor || 0)}
-                </td>
-              </tr>
-            ))}
+            {contasCliente.map(conta => {
+              const ordem = ordensCliente.find(o => o.id === conta.ordemId)
+              return (
+                <tr key={conta.id}>
+                  <td className="mono">{ordem?.numero || '—'}</td>
+                  <td>{conta.descricao}</td>
+                  <td className="muted">{formatDate(conta.vencimento)}</td>
+                  <td><Badge value={conta.status} /></td>
+                  <td className={`right ${conta.status === 'aberto' ? 'debit' : 'credit'}`} style={{ fontWeight:600 }}>
+                    {formatCurrency(conta.valor || 0)}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -62,27 +63,27 @@ function DetalheModal({ cliente, onClose }) {
 }
 
 export default function ClientesFinanceiro() {
-  const [search, setSearch]       = useState('')
+  const [search, setSearch]           = useState('')
   const [filtroSaldo, setFiltroSaldo] = useState(false)
   const [detalheCliente, setDetalheCliente] = useState(null)
 
-  const clientes = readLocal('ts_clientes', [])
-  const ordens   = readLocal('ts_ordens', [])
-  const contas   = readLocal('ts_contasReceber', [])
+  const [clientes] = useLocalState('ts_clientes',       [])
+  const [ordens]   = useLocalState('ts_ordens',         [])
+  const [contas]   = useLocalState('ts_contasReceber',  [])
 
-  // Monta dados financeiros por cliente
   const dados = clientes.map(cli => {
     const ordensCliente = ordens.filter(o => o.clienteId === cli.id)
-    const contasCliente = ordensCliente
-      .map(o => contas.find(c => c.ordemId === o.id))
-      .filter(Boolean)
+    // Todas as parcelas/contas vinculadas às ordens do cliente
+    const contasCliente = contas.filter(c =>
+      ordensCliente.some(o => o.id === c.ordemId)
+    )
 
-    const saldoAberto  = contasCliente.filter(c => c.status === 'aberto')
+    const saldoAberto   = contasCliente.filter(c => c.status === 'aberto')
       .reduce((s, c) => s + (c.valor || 0), 0)
     const totalRecebido = contasCliente.filter(c => c.status === 'confirmado')
       .reduce((s, c) => s + (c.valor || 0), 0)
-    const qtdAberto    = contasCliente.filter(c => c.status === 'aberto').length
-    const qtdTotal     = contasCliente.length
+    const qtdAberto = contasCliente.filter(c => c.status === 'aberto').length
+    const qtdTotal  = contasCliente.length
 
     return { ...cli, saldoAberto, totalRecebido, qtdAberto, qtdTotal }
   })
@@ -105,31 +106,23 @@ export default function ClientesFinanceiro() {
         </h2>
       </div>
 
-      {/* Cards */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'16px' }}>
-        <StatCard label="Total em Aberto"   value={totalAberto}   cls="orange" />
-        <StatCard label="Total Recebido"    value={totalRecebido} cls="green"  />
-        <StatCard label="Clientes com Saldo" value={comSaldo}     cls="blue" isCount />
+        <StatCard label="Total em Aberto"    value={totalAberto}   cls="orange" />
+        <StatCard label="Total Recebido"     value={totalRecebido} cls="green"  />
+        <StatCard label="Clientes com Saldo" value={comSaldo}      cls="blue" isCount />
       </div>
 
-      {/* Filtros */}
       <div className="erp-filter-row">
         <input
           value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar cliente..."
-          className="erp-input" style={{ width:'260px' }}
+          placeholder="Buscar cliente..." className="erp-input" style={{ width:'260px' }}
         />
         <label style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'12px', color:'#54698D', cursor:'pointer' }}>
-          <input
-            type="checkbox"
-            checked={filtroSaldo}
-            onChange={e => setFiltroSaldo(e.target.checked)}
-          />
+          <input type="checkbox" checked={filtroSaldo} onChange={e => setFiltroSaldo(e.target.checked)} />
           Apenas com saldo em aberto
         </label>
       </div>
 
-      {/* Tabela */}
       <div className="erp-panel">
         <table className="erp-table">
           <thead><tr>
@@ -165,12 +158,7 @@ export default function ClientesFinanceiro() {
                   </td>
                   <td className="center">
                     {cli.qtdTotal > 0 && (
-                      <button
-                        onClick={() => setDetalheCliente(cli)}
-                        className="erp-btn erp-btn-link erp-btn-sm"
-                      >
-                        Ver
-                      </button>
+                      <button onClick={() => setDetalheCliente(cli)} className="erp-btn erp-btn-link erp-btn-sm">Ver</button>
                     )}
                   </td>
                 </tr>

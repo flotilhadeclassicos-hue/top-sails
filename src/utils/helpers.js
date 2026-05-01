@@ -9,6 +9,9 @@ export const formatDate = (dateStr) => {
 export const formatCurrency = (value) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
 
+export const formatCurrencyInt = (value) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value || 0)
+
 export const addDays = (dateStr, days) => {
   const d = new Date(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + Number(days))

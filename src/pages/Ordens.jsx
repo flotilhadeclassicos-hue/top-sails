@@ -3,6 +3,8 @@ import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
+import { PreviewModal } from './Pedidos'
+import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 
 const STATUS_LIST = [
   { value:'aguardando', label:'Aguardando'  },
@@ -244,6 +246,44 @@ export function OrdemForm({ initial, ordens, onSave, onClose }) {
   )
 }
 
+function OrdemViewModal({ ordem, onClose }) {
+  const clientes   = readLocal('ts_clientes',   [])
+  const categorias = readLocal('ts_categorias', [])
+  const pedidos    = readLocal('ts_pedidos',    [])
+
+  const cli    = clientes.find(c => c.id === ordem.clienteId)
+  const cat    = categorias.find(c => c.id === ordem.categoriaId)
+  const pedido = pedidos.find(p => p.id === ordem.pedidoId)
+
+  const Campo = ({ label, value, mono }) => (
+    <div style={{ display:'flex', gap:'8px', padding:'7px 0', borderBottom:'1px solid #F0F2F5' }}>
+      <span style={{ fontSize:'11px', color:'#54698D', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', minWidth:'120px', flexShrink:0 }}>{label}</span>
+      <span style={{ fontSize:'13px', color:'#16191F', fontFamily: mono ? 'monospace' : 'inherit', fontWeight: mono ? 700 : 400 }}>{value || '—'}</span>
+    </div>
+  )
+
+  return (
+    <Modal title={`Ordem de Serviço — ${ordem.numero}`} onClose={onClose} size="md">
+      <div style={{ padding:'4px 0' }}>
+        <Campo label="Nº OS"         value={ordem.numero}                mono />
+        <Campo label="Cliente"       value={cli?.nome} />
+        <Campo label="Embarcação"    value={ordem.embarcacao} />
+        <Campo label="Categoria"     value={cat?.nome} />
+        <Campo label="Descrição"     value={ordem.descricao} />
+        <Campo label="Data Retirada" value={formatDate(ordem.dataRetirada)} />
+        <Campo label="Prazo"         value={ordem.prazoDias ? `${ordem.prazoDias} dias` : null} />
+        <Campo label="Entrega Prev." value={formatDate(ordem.dataEntrega)} />
+        <Campo label="Valor"         value={formatCurrency(ordem.valor)} />
+        <Campo label="Status"        value={STATUS_LIST.find(s => s.value === ordem.status)?.label} />
+        {pedido && <Campo label="Pedido Vinculado" value={pedido.numero} mono />}
+      </div>
+      <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'16px', paddingTop:'12px', borderTop:'1px solid #E4E7EA' }}>
+        <button onClick={onClose} className="erp-btn erp-btn-secondary">Fechar</button>
+      </div>
+    </Modal>
+  )
+}
+
 export default function Ordens() {
   const [ordens, setOrdens] = useLocalState('ts_ordens', [])
   const [search, setSearch] = useState('')
@@ -252,6 +292,9 @@ export default function Ordens() {
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
   const [baixaItem, setBaixaItem] = useState(null)
+  const [clienteModal, setClienteModal] = useState(null)
+  const [viewOrdem, setViewOrdem] = useState(null)
+  const [previewPedido, setPreviewPedido] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const clientes   = readLocal('ts_clientes', [])
@@ -287,7 +330,7 @@ export default function Ordens() {
   return (
     <div style={{ padding:'20px 24px' }}>
       <nav className="erp-bc">
-        <span>Top Sails</span><span className="sep">/</span><span className="cur">Ordens de Serviço</span>
+        <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Ordens de Serviço</span>
       </nav>
       <div className="erp-toolbar">
         <h1 className="erp-page-title">Ordens de Serviço</h1>
@@ -321,17 +364,29 @@ export default function Ordens() {
               const pedidoVinculado = pedidos.find(p => p.id === ordem.pedidoId)
               return (
                 <tr key={ordem.id}>
-                  <td className="mono">{ordem.numero}</td>
-                  <td style={{ fontWeight:500 }}>{cli?.nome||'—'}</td>
+                  <td className="mono">
+                    <LinkBtn onClick={() => setViewOrdem(ordem)}>{ordem.numero}</LinkBtn>
+                  </td>
+                  <td style={{ fontWeight:500 }}>
+                    {cli ? <LinkBtn onClick={() => setClienteModal(cli)}>{cli.nome}</LinkBtn> : '—'}
+                  </td>
                   <td className="muted">{ordem.embarcacao||'—'}</td>
                   <td className="muted">{cat?.nome||'—'}</td>
                   <td className="muted">{formatDate(ordem.dataRetirada)}</td>
                   <td className="muted">{formatDate(ordem.dataEntrega)}</td>
                   <td className="right" style={{ fontWeight:600 }}>{formatCurrency(ordem.valor)}</td>
                   <td>
-                    {pedidoVinculado
-                      ? <span style={{ fontFamily:'monospace', fontSize:'11px', color:'#0070D2', fontWeight:600 }}>{pedidoVinculado.numero}</span>
-                      : <span className="muted">—</span>}
+                    {pedidoVinculado ? (
+                      <button
+                        onClick={() => setPreviewPedido(pedidoVinculado)}
+                        style={{ background:'none', border:'none', cursor:'pointer',
+                          fontFamily:'monospace', fontSize:'11px', color:'#0070D2',
+                          fontWeight:600, padding:0, textDecoration:'underline',
+                          textDecorationStyle:'dotted', textUnderlineOffset:'2px' }}
+                      >
+                        {pedidoVinculado.numero}
+                      </button>
+                    ) : <span className="muted">—</span>}
                   </td>
                   <td style={{ padding:'4px 6px' }}>
                     <StatusSelect value={ordem.status} onChange={v => handleStatusChange(ordem.id, v)} />
@@ -359,6 +414,9 @@ export default function Ordens() {
           onConfirm={() => handleDelete(deleteItem)} onClose={() => setDeleteItem(null)} />
       )}
       {baixaItem && <BaixaModal conta={baixaItem} onClose={() => setBaixaItem(null)} onDone={() => setRefreshKey(k => k+1)} />}
+      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} />}
+      {viewOrdem && <OrdemViewModal ordem={viewOrdem} onClose={() => setViewOrdem(null)} />}
+      {previewPedido && <PreviewModal pedido={previewPedido} onClose={() => setPreviewPedido(null)} />}
     </div>
   )
 }

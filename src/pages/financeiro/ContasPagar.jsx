@@ -26,47 +26,56 @@ function StatCard({ label, value, cls }) {
 function ConfirmarModal({ conta, onClose, onDone }) {
   const [forma,   setForma]   = useState('pix')
   const [parteId, setParteId] = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [erro,    setErro]    = useState('')
   const partes = readLocal('ts_partes', [])
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    setErro(''); setSaving(true)
     const dt = today()
     const novosLancIds = []
+    try {
+      if (forma === 'pix') {
+        const fin = readLocal('ts_financeiro', [])
+        const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        await writeLocal('ts_financeiro', [...fin, l]); novosLancIds.push(l.id)
 
-    if (forma === 'pix') {
-      const fin = readLocal('ts_financeiro', [])
-      const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId:null, contaId:conta.id }
-      writeLocal('ts_financeiro', [...fin, l]); novosLancIds.push(l.id)
+      } else if (forma === 'dinheiro') {
+        const cax = readLocal('ts_caixinha', [])
+        const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        await writeLocal('ts_caixinha', [...cax, l]); novosLancIds.push(l.id)
 
-    } else if (forma === 'dinheiro') {
-      const cax = readLocal('ts_caixinha', [])
-      const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId:null, contaId:conta.id }
-      writeLocal('ts_caixinha', [...cax, l]); novosLancIds.push(l.id)
+      } else if (forma === 'cruzado') {
+        const baixaCruzadaId = uuid()
+        const ob          = readLocal('ts_offBook', [])
+        const parte       = partes.find(p => p.id === parteId)
+        const allCats     = readLocal('ts_categorias', [])
+        const catDespesa  = conta.categoriaId
+        const catParteRel = (allCats.find(c => c.nome === 'Parte Relacionada') || {}).id
 
-    } else if (forma === 'cruzado') {
-      // Partidas dobradas — pagamento via conta de terceiros
-      const baixaCruzadaId = uuid()
-      const ob          = readLocal('ts_offBook', [])
-      const parte       = partes.find(p => p.id === parteId)
-      const allCats     = readLocal('ts_categorias', [])
-      const catDespesa  = conta.categoriaId
-      const catParteRel = (allCats.find(c => c.nome === 'Parte Relacionada') || {}).id || catDespesa
+        if (!catParteRel) {
+          setErro('Categoria "Parte Relacionada" não encontrada. Cadastre-a em Categorias.')
+          setSaving(false); return
+        }
 
-      // 1. Off Book Débito — categoria da conta (despesa); aparece na aba Off Book
-      const db = { id:uuid(), descricao:conta.descricao, categoriaId:catDespesa, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
-      // 2. Off Book Crédito — categoria "Parte Relacionada"; aparece na aba Off Book
-      const cr = { id:uuid(), descricao:`Recebimento — ${parte?.nome||'Terceiro'}`, categoriaId:catParteRel, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
-      // 3. Gestão de Contas Débito — categoria "Parte Relacionada"; parteId obrigatório
-      const gc = { id:uuid(), descricao:conta.descricao, categoriaId:catParteRel, parteId, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
+        const db = { id:uuid(), descricao:conta.descricao, categoriaId:catDespesa, parteId:null, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
+        const cr = { id:uuid(), descricao:`Recebimento — ${parte?.nome||'Terceiro'}`, categoriaId:catParteRel, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId, contaId:conta.id }
+        const gc = { id:uuid(), descricao:conta.descricao, categoriaId:catParteRel, parteId, valor:conta.valor, tipo:'despesa', data:dt, baixaCruzadaId, contaId:conta.id }
 
-      writeLocal('ts_offBook', [...ob, db, cr, gc])
-      novosLancIds.push(db.id, cr.id, gc.id)
+        await writeLocal('ts_offBook', [...ob, db, cr, gc])
+        novosLancIds.push(db.id, cr.id, gc.id)
+      }
+
+      const contas = readLocal('ts_contasPagar', [])
+      await writeLocal('ts_contasPagar', contas.map(c =>
+        c.id === conta.id ? { ...c, status:'confirmado', formaPagamento:forma, lancIds:novosLancIds } : c
+      ))
+      onDone(); onClose()
+    } catch {
+      setErro('Erro ao salvar. Verifique a conexão e tente novamente.')
+    } finally {
+      setSaving(false)
     }
-
-    const contas = readLocal('ts_contasPagar', [])
-    writeLocal('ts_contasPagar', contas.map(c =>
-      c.id === conta.id ? { ...c, status:'confirmado', formaPagamento:forma, lancIds:novosLancIds } : c
-    ))
-    onDone(); onClose()
   }
 
   return (
@@ -97,10 +106,11 @@ function ConfirmarModal({ conta, onClose, onDone }) {
           </div>
         </>
       )}
+      {erro && <div style={{ margin:'10px 0', padding:'8px 10px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', fontSize:'11px', color:'#C62828' }}>{erro}</div>}
       <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
-        <button onClick={onClose} className="erp-btn erp-btn-secondary">Cancelar</button>
-        <button onClick={handleConfirm} disabled={forma==='cruzado' && !parteId}
-          className="erp-btn erp-btn-danger">Confirmar Pagamento</button>
+        <button onClick={onClose} disabled={saving} className="erp-btn erp-btn-secondary">Cancelar</button>
+        <button onClick={handleConfirm} disabled={saving || (forma==='cruzado' && !parteId)}
+          className="erp-btn erp-btn-danger">{saving ? 'Salvando...' : 'Confirmar Pagamento'}</button>
       </div>
     </Modal>
   )
@@ -428,11 +438,16 @@ export default function ContasPagar() {
   const aPagar = contas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
   const pago   = contas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
 
-  const handleEstorno = (conta) => {
-    if (conta.formaPagamento==='pix')      { const f=readLocal('ts_financeiro',[]); writeLocal('ts_financeiro', f.filter(l=>!conta.lancIds?.includes(l.id))) }
-    else if (conta.formaPagamento==='dinheiro') { const c=readLocal('ts_caixinha',[]); writeLocal('ts_caixinha', c.filter(l=>!conta.lancIds?.includes(l.id))) }
-    else if (conta.formaPagamento==='cruzado')  { const o=readLocal('ts_offBook',[]); writeLocal('ts_offBook', o.filter(l=>!conta.lancIds?.includes(l.id))) }
-    setContas(prev => prev.map(c => c.id===conta.id ? { ...c, status:'aberto', formaPagamento:null, lancIds:[] } : c))
+  const handleEstorno = async (conta) => {
+    const ids = conta.lancIds || []
+    try {
+      if (conta.formaPagamento==='pix')           { await writeLocal('ts_financeiro', readLocal('ts_financeiro',[]).filter(l => !ids.includes(l.id))) }
+      else if (conta.formaPagamento==='dinheiro') { await writeLocal('ts_caixinha',   readLocal('ts_caixinha',  []).filter(l => !ids.includes(l.id))) }
+      else if (conta.formaPagamento==='cruzado')  { await writeLocal('ts_offBook',    readLocal('ts_offBook',   []).filter(l => !ids.includes(l.id))) }
+      setContas(prev => prev.map(c => c.id===conta.id ? { ...c, status:'aberto', formaPagamento:null, lancIds:[] } : c))
+    } catch {
+      alert('Erro ao estornar. Verifique a conexão e tente novamente.')
+    }
   }
 
   const STATUS_TABS = [{ value:'', label:'Todos' }, { value:'aberto', label:'Em aberto' }, { value:'confirmado', label:'Confirmados' }]
@@ -488,7 +503,7 @@ export default function ContasPagar() {
                         <button onClick={() => { setEditItem(conta); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
                       </>}
                       {conta.status==='confirmado' && <button onClick={() => handleEstorno(conta)} className="erp-btn erp-btn-link erp-btn-sm" style={{ color:'#E65100' }}>Estornar</button>}
-                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>conta.lancIds?.includes(i.id)&&i.baixaCruzadaId); if(f) setCadeiaId(f.baixaCruzadaId) }} className="erp-btn erp-btn-link-purple erp-btn-sm">Ver cadeia</button>}
+                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>(conta.lancIds||[]).includes(i.id)&&i.baixaCruzadaId); if(f?.baixaCruzadaId) setCadeiaId(f.baixaCruzadaId) }} className="erp-btn erp-btn-link-purple erp-btn-sm">Ver cadeia</button>}
                       <button onClick={() => setDeleteItem(conta)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
                     </span>
                   </td>

@@ -172,3 +172,119 @@ body {
 .table-input:focus { background:#EAF3FB; outline:1px solid #0070D2; border-radius:1px; }
 .table-input.right { text-align:right; }
 .table-input.center { text-align:center; }
+
+/* ── ChevronKPI ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .chevron-kpi {
+    flex-direction: column !important;
+    gap: 3px !important;
+    min-height: unset !important;
+  }
+  .chevron-step {
+    clip-path: none !important;
+    margin-left: 0 !important;
+    border-radius: 2px;
+    padding: 12px 16px !important;
+  }
+}
+
+/* ── Layout base (desktop) ───────────────────────────── */
+.ts-topbar      { display:none }
+.ts-backdrop    { display:none }
+.ts-sidebar-wrap { flex-shrink:0 }
+.ts-main        { flex:1; overflow:auto; background:#F4F6F8; min-width:0 }
+
+/* ── Mobile (≤ 768px) ────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Barra superior */
+  .ts-topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    position:fixed; top:0; left:0; right:0; height:52px;
+    background:#1C2833; z-index:300; padding:0 16px;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .ts-topbar-brand { color:#fff; font-weight:700; font-size:14px; letter-spacing:-.01em }
+
+  /* Botão hamburguer */
+  .ts-hamburger {
+    display:flex; flex-direction:column; justify-content:center; gap:5px;
+    background:none; border:none; cursor:pointer; padding:6px; width:40px; height:40px;
+  }
+  .ts-hamburger span { display:block; height:2px; width:22px; background:#fff; border-radius:2px }
+
+  /* Backdrop */
+  .ts-backdrop {
+    display:block; position:fixed; inset:0;
+    background:rgba(0,0,0,.55); z-index:350;
+  }
+
+  /* Sidebar como drawer lateral */
+  .ts-sidebar-wrap {
+    display:block; position:fixed;
+    top:0; left:0; bottom:0; z-index:400;
+    transform:translateX(-220px);
+    transition:transform .25s ease;
+    box-shadow:4px 0 20px rgba(0,0,0,.4);
+  }
+  .ts-sidebar-open { transform:translateX(0) }
+
+  /* Botão fechar dentro da sidebar */
+  .ts-sidebar-close {
+    display:flex; align-items:center; justify-content:center;
+    background:none; border:none; color:#9DAFC0;
+    font-size:24px; line-height:1; cursor:pointer;
+    padding:0 4px; border-radius:2px;
+  }
+  .ts-sidebar-close:hover { color:#fff }
+
+  /* Conteúdo principal: espaço para a topbar */
+  .ts-main { padding-top:52px; width:100% }
+
+  /* Tabelas com scroll horizontal */
+  .erp-panel {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Toolbar: quebra em 2 linhas */
+  .erp-toolbar {
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  /* Filtros: quebra em linhas */
+  .erp-filter-row {
+    flex-wrap:wrap;
+  }
+  .erp-filter-row .erp-input,
+  .erp-filter-row .erp-select {
+    flex:1; min-width:140px;
+  }
+
+  /* Tabs: scroll horizontal */
+  .erp-tabs {
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    white-space:nowrap; flex-wrap:nowrap;
+  }
+
+  /* Stat cards: mínimo 2 por linha */
+  .erp-stat {
+    min-width:130px;
+  }
+
+  /* Breadcrumb menor */
+  .erp-bc { font-size:10px }
+
+  /* Título menor */
+  .erp-page-title { font-size:13px }
+
+  /* Inputs e selects em modal: 100% */
+  .erp-input, .erp-select, .erp-textarea {
+    font-size:16px; /* evita zoom automático no iOS */
+  }
+
+  /* Botões de ação nas tabelas: espaçamento menor */
+  .erp-btn-xs { padding:4px 8px; font-size:12px }
+  .erp-btn-sm { padding:5px 10px; font-size:12px }
+}

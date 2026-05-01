@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocalState, readLocal } from '../../hooks/useLocalState'
+import { useLocalState } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
@@ -14,9 +14,9 @@ function StatCard({ label, value, cls }) {
 }
 
 function FormModal({ initial, storageKey, onClose }) {
-  const [items, setItems] = useLocalState(storageKey, [])
-  const categorias = readLocal('ts_categorias', [])
-  const partes = readLocal('ts_partes', [])
+  const [items, setItems]   = useLocalState(storageKey, [])
+  const [categorias]        = useLocalState('ts_categorias', [])
+  const [partes]            = useLocalState('ts_partes', [])
 
   const [form, setForm] = useState(() => initial
     ? { tipo:initial.tipo, descricao:initial.descricao, categoriaId:initial.categoriaId, parteId:initial.parteId||'', valor:initial.valor, data:initial.data }
@@ -99,7 +99,7 @@ export default function LancamentosTab({ storageKey, title }) {
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
 
-  const categorias = readLocal('ts_categorias', [])
+  const [categorias] = useLocalState('ts_categorias', [])
 
   const filtered = items.filter(i => {
     const cat = categorias.find(c => c.id === i.categoriaId)
