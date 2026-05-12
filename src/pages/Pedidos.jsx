@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { OrdemForm } from './Ordens'
 import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 import Badge from '../components/ui/Badge'
-import html2pdf from 'html2pdf.js'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUS_LIST = [
@@ -202,7 +203,6 @@ function buildHTML(pedido, templateImagem) {
 export async function gerarPDF(pedido) {
   const templateImagem = readLocal('ts_template_pedido', {})?.imagem || null
 
-  // Renderiza em iframe para preservar <head> e estilos do documento completo
   const container = document.createElement('div')
   container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;'
   document.body.appendChild(container)
@@ -215,19 +215,22 @@ export async function gerarPDF(pedido) {
   await new Promise(resolve => { iframe.onload = resolve })
   await new Promise(resolve => setTimeout(resolve, 600))
 
-  await html2pdf()
-    .set({
-      margin:      0,
-      filename:    `${pedido.numero}.pdf`,
-      image:       { type:'jpeg', quality:0.98 },
-      html2canvas: { scale:2, useCORS:true, width:794, windowWidth:794, logging:false },
-      jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
-      enableLinks: true,
-    })
-    .from(iframe.contentDocument.body)
-    .save()
+  const canvas = await html2canvas(iframe.contentDocument.body, {
+    scale: 2,
+    useCORS: true,
+    width: 794,
+    windowWidth: 794,
+  })
 
   document.body.removeChild(container)
+
+  const imgData = canvas.toDataURL('image/png')
+  const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' })
+  const pdfW = pdf.internal.pageSize.getWidth()
+  const pdfH = (canvas.height * pdfW) / canvas.width
+
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+  pdf.save(`${pedido.numero}.pdf`)
 }
 
 // ── Contas a Receber c/ Parcelamento ─────────────────────────────────────────
@@ -439,16 +442,20 @@ function ContasReceberModal({ ordem, pedido, onClose }) {
 
 // ── Preview modal ─────────────────────────────────────────────────────────────
 export function PreviewModal({ pedido, onClose }) {
-  const [exportando, setExportando] = useState(false)
+  const [baixando, setBaixando] = useState(false)
   const [templateCfg] = useLocalState('ts_template_pedido', {})
   const templateImagem = templateCfg?.imagem || null
   const html = buildHTML(pedido, templateImagem)
+  const iframeRef = useRef(null)
 
-  const handleExportar = async () => {
-    setExportando(true)
+  const handleBaixar = async () => {
+    setBaixando(true)
     await gerarPDF(pedido)
-    setExportando(false)
-    onClose()
+    setBaixando(false)
+  }
+
+  const handleImprimir = () => {
+    iframeRef.current?.contentWindow?.print()
   }
 
   return (
@@ -462,8 +469,11 @@ export function PreviewModal({ pedido, onClose }) {
           <button onClick={onClose} className="erp-btn erp-btn-secondary erp-btn-sm">
             Fechar
           </button>
-          <button onClick={handleExportar} disabled={exportando} className="erp-btn erp-btn-primary erp-btn-sm">
-            {exportando ? 'Gerando PDF…' : '⬇ Exportar PDF'}
+          <button onClick={handleImprimir} className="erp-btn erp-btn-secondary erp-btn-sm">
+            🖨 Imprimir
+          </button>
+          <button onClick={handleBaixar} disabled={baixando} className="erp-btn erp-btn-primary erp-btn-sm">
+            {baixando ? 'Gerando PDF…' : '⬇ Baixar PDF'}
           </button>
         </div>
       </div>
@@ -471,6 +481,7 @@ export function PreviewModal({ pedido, onClose }) {
       {/* Preview area */}
       <div style={{ flex:1, overflow:'auto', display:'flex', justifyContent:'center', padding:'30px 20px' }}>
         <iframe
+          ref={iframeRef}
           srcDoc={html}
           style={{ width:'794px', minHeight:'1123px', border:'none', background:'#fff', boxShadow:'0 4px 24px rgba(0,0,0,0.4)', flexShrink:0 }}
           title="Pré-visualização do orçamento"
