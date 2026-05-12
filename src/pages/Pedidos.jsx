@@ -475,11 +475,11 @@ export function PreviewModal({ pedido, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background:'rgba(0,0,0,0.75)' }}>
       {/* Toolbar */}
-      <div style={{ background:'#1C2833', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', flexShrink:0 }}>
-        <div style={{ color:'#AFBAC4', fontSize:'13px', fontWeight:600 }}>
-          Pré-visualização — {pedido.numero}
+      <div style={{ background:'#1C2833', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px', padding:'10px 16px', flexShrink:0 }}>
+        <div style={{ color:'#AFBAC4', fontSize:'13px', fontWeight:600, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {pedido.numero}
         </div>
-        <div style={{ display:'flex', gap:'10px' }}>
+        <div style={{ display:'flex', gap:'8px', flexShrink:0 }}>
           <button onClick={onClose} className="erp-btn erp-btn-secondary erp-btn-sm">
             Fechar
           </button>
@@ -487,7 +487,7 @@ export function PreviewModal({ pedido, onClose }) {
             🖨 Imprimir
           </button>
           <button onClick={handleBaixar} disabled={baixando} className="erp-btn erp-btn-primary erp-btn-sm">
-            {baixando ? 'Gerando PDF…' : '⬇ Baixar PDF'}
+            {baixando ? 'Gerando…' : '⬇ Baixar PDF'}
           </button>
         </div>
       </div>
