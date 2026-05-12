@@ -5,8 +5,7 @@ import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber,
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 import Badge from '../components/ui/Badge'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import html2pdf from 'html2pdf.js'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATUS_LIST = [
@@ -201,10 +200,9 @@ function buildHTML(pedido, templateImagem) {
 }
 
 export async function gerarPDF(pedido) {
-  // Lê template de fundo (se configurado em Cadastros → Template PDF)
   const templateImagem = readLocal('ts_template_pedido', {})?.imagem || null
 
-  // Monta o HTML em um iframe oculto para renderização fiel
+  // Renderiza em iframe para preservar <head> e estilos do documento completo
   const container = document.createElement('div')
   container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;'
   document.body.appendChild(container)
@@ -212,29 +210,24 @@ export async function gerarPDF(pedido) {
   const iframe = document.createElement('iframe')
   iframe.style.cssText = 'width:794px;height:1123px;border:none;'
   container.appendChild(iframe)
-
   iframe.srcdoc = buildHTML(pedido, templateImagem)
 
   await new Promise(resolve => { iframe.onload = resolve })
-  // aguarda fontes e layout
   await new Promise(resolve => setTimeout(resolve, 600))
 
-  const canvas = await html2canvas(iframe.contentDocument.body, {
-    scale: 2,
-    useCORS: true,
-    width: 794,
-    windowWidth: 794,
-  })
+  await html2pdf()
+    .set({
+      margin:      0,
+      filename:    `${pedido.numero}.pdf`,
+      image:       { type:'jpeg', quality:0.98 },
+      html2canvas: { scale:2, useCORS:true, width:794, windowWidth:794, logging:false },
+      jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' },
+      enableLinks: true,
+    })
+    .from(iframe.contentDocument.body)
+    .save()
 
   document.body.removeChild(container)
-
-  const imgData = canvas.toDataURL('image/png')
-  const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' })
-  const pdfW = pdf.internal.pageSize.getWidth()
-  const pdfH = (canvas.height * pdfW) / canvas.width
-
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
-  pdf.save(`${pedido.numero}.pdf`)
 }
 
 // ── Contas a Receber c/ Parcelamento ─────────────────────────────────────────
