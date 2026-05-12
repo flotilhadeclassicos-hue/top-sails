@@ -473,7 +473,7 @@ export function PreviewModal({ pedido, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background:'rgba(0,0,0,0.75)' }}>
+    <div className="fixed inset-0 z-[500] flex flex-col" style={{ background:'rgba(0,0,0,0.75)' }}>
       {/* Toolbar */}
       <div style={{ background:'#1C2833', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px', padding:'10px 16px', flexShrink:0 }}>
         <div style={{ color:'#AFBAC4', fontSize:'13px', fontWeight:600, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
