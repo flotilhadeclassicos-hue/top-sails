@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { OrdemForm } from './Ordens'
 import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber, monthLabel } from '../utils/helpers'
@@ -446,10 +446,21 @@ function ContasReceberModal({ ordem, pedido, onClose }) {
 // ── Preview modal ─────────────────────────────────────────────────────────────
 export function PreviewModal({ pedido, onClose }) {
   const [baixando, setBaixando] = useState(false)
+  const [scale, setScale] = useState(1)
   const [templateCfg] = useLocalState('ts_template_pedido', {})
   const templateImagem = templateCfg?.imagem || null
   const html = buildHTML(pedido, templateImagem)
   const iframeRef = useRef(null)
+
+  useEffect(() => {
+    const update = () => {
+      const available = window.innerWidth - 40
+      setScale(Math.min(1, available / 794))
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   const handleBaixar = async () => {
     setBaixando(true)
@@ -482,13 +493,21 @@ export function PreviewModal({ pedido, onClose }) {
       </div>
 
       {/* Preview area */}
-      <div style={{ flex:1, overflow:'auto', display:'flex', justifyContent:'center', padding:'30px 20px' }}>
-        <iframe
-          ref={iframeRef}
-          srcDoc={html}
-          style={{ width:'794px', minHeight:'1123px', border:'none', background:'#fff', boxShadow:'0 4px 24px rgba(0,0,0,0.4)', flexShrink:0 }}
-          title="Pré-visualização do orçamento"
-        />
+      <div style={{ flex:1, overflow:'auto', display:'flex', justifyContent:'center', padding:'20px' }}>
+        <div style={{ width: 794 * scale, flexShrink:0 }}>
+          <iframe
+            ref={iframeRef}
+            srcDoc={html}
+            style={{
+              width:'794px', minHeight:'1123px', border:'none',
+              background:'#fff', boxShadow:'0 4px 24px rgba(0,0,0,0.4)',
+              transformOrigin:'top left',
+              transform:`scale(${scale})`,
+              display:'block',
+            }}
+            title="Pré-visualização do orçamento"
+          />
+        </div>
       </div>
     </div>
   )
