@@ -7,6 +7,7 @@ const navItems = [
   { id: 'gestaoFinanceira',label: 'Gestão Financeira', icon: '◎' },
   { id: 'gestaoContas',    label: 'Gestão de Contas',  icon: '◑' },
   { id: 'relatorios',      label: 'Relatórios',         icon: '◫' },
+  { id: 'backup',          label: 'Backup',             icon: '◐' },
 ]
 
 export default function Sidebar({ currentPage, onNavigate, onLogout, user, onCloseMobile }) {

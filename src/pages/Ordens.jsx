@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
-import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber } from '../utils/helpers'
+import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 import { PreviewModal } from './Pedidos'
@@ -286,8 +286,9 @@ function OrdemViewModal({ ordem, onClose }) {
 
 export default function Ordens() {
   const [ordens, setOrdens] = useLocalState('ts_ordens', [])
-  const [search, setSearch] = useState('')
+  const [search,      setSearch]      = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [monthFilter,  setMonthFilter]  = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
@@ -301,11 +302,13 @@ export default function Ordens() {
   const categorias = readLocal('ts_categorias', [])
   const pedidos    = readLocal('ts_pedidos', [])
 
+  const months   = [...new Set(ordens.filter(o => o.dataRetirada).map(o => o.dataRetirada.substring(0, 7)))].sort().reverse()
   const filtered = ordens.filter(o => {
     const cli = clientes.find(c => c.id === o.clienteId)
     const matchS = !search || o.numero?.toLowerCase().includes(search.toLowerCase()) || cli?.nome?.toLowerCase().includes(search.toLowerCase()) || o.embarcacao?.toLowerCase().includes(search.toLowerCase())
     const matchT = !statusFilter || o.status === statusFilter
-    return matchS && matchT
+    const matchM = !monthFilter || o.dataRetirada?.startsWith(monthFilter)
+    return matchS && matchT && matchM
   })
 
   const handleSave = (item) => setOrdens(prev => prev.find(o => o.id === item.id) ? prev.map(o => o.id === item.id ? item : o) : [...prev, item])
@@ -338,10 +341,14 @@ export default function Ordens() {
       </div>
 
       <div className="erp-filter-row">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por OS, cliente ou embarcação..." className="erp-input" style={{ width:'300px' }} />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="erp-select" style={{ width:'160px' }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por OS, cliente ou embarcação..." className="erp-input" style={{ width:'260px' }} />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="erp-select" style={{ width:'150px' }}>
           <option value="">Todos os status</option>
           {STATUS_LIST.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="erp-select" style={{ width:'140px' }}>
+          <option value="">Todos os meses</option>
+          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
       </div>
 

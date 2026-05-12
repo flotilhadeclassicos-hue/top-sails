@@ -4,10 +4,12 @@ import OffBook from './OffBook'
 import ConsolidadoView from './ConsolidadoView'
 
 const CONTAS = [
-  { id:'consolidado', label:'Consolidado'    },
-  { id:'fluxo',       label:'Bancos' },
-  { id:'caixinha',    label:'Caixinha'        },
-  { id:'offbook',     label:'Off Book'        },
+  { id:'consolidado',  label:'Consolidado'      },
+  { id:'fluxo',        label:'Bancos'           },
+  { id:'caixinha',     label:'Caixinha'         },
+  { id:'caixinhaUsd',  label:'Caixinha USD'     },
+  { id:'reserva',      label:'Reserva'          },
+  { id:'offbook',      label:'Off Book'         },
 ]
 
 export default function FluxoCaixaView() {
@@ -15,8 +17,10 @@ export default function FluxoCaixaView() {
 
   const content = {
     consolidado: <ConsolidadoView key="consolidado" />,
-    fluxo:       <LancamentosTab key="fluxo"    storageKey="ts_financeiro" title="Bancos" />,
-    caixinha:    <LancamentosTab key="caixinha" storageKey="ts_caixinha"   title="Caixinha"        />,
+    fluxo:       <LancamentosTab key="fluxo"       storageKey="ts_financeiro"  title="Bancos"          />,
+    caixinha:    <LancamentosTab key="caixinha"    storageKey="ts_caixinha"    title="Caixinha"        />,
+    caixinhaUsd: <LancamentosTab key="caixinhaUsd" storageKey="ts_caixinhaUsd" title="Caixinha em Dólar" />,
+    reserva:     <LancamentosTab key="reserva"     storageKey="ts_reserva"     title="Reserva"         />,
     offbook:     <OffBook key="offbook" />,
   }
 

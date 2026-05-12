@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
-import { uuid, formatDate, formatCurrency, today, addDays } from '../../utils/helpers'
+import { uuid, formatDate, formatCurrency, today, addDays, monthLabel } from '../../utils/helpers'
 
 // Avança N meses mantendo o mesmo dia (respeita fim de mês)
 function addMonths(dateStr, months) {
@@ -428,15 +428,19 @@ export default function ContasPagar() {
   const [cadeiaId, setCadeiaId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [statusFilter, setStatusFilter] = useState('aberto')
+  const [monthFilter,  setMonthFilter]  = useState('')
 
   const fornecedores = readLocal('ts_fornecedores', [])
   const categorias   = readLocal('ts_categorias', [])
 
   const refresh = () => { setRefreshKey(k => k+1); setContas(readLocal('ts_contasPagar', [])) }
 
-  const filtered = contas.filter(c => !statusFilter || c.status === statusFilter)
-  const aPagar = contas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
-  const pago   = contas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
+  const months     = [...new Set(contas.filter(c => c.vencimento).map(c => c.vencimento.substring(0, 7)))].sort().reverse()
+  const baseContas = monthFilter ? contas.filter(c => c.vencimento?.startsWith(monthFilter)) : contas
+
+  const filtered = baseContas.filter(c => !statusFilter || c.status === statusFilter)
+  const aPagar = baseContas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
+  const pago   = baseContas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
 
   const handleEstorno = async (conta) => {
     const ids = conta.lancIds || []
@@ -464,11 +468,19 @@ export default function ContasPagar() {
         <StatCard label="Total Pago" value={pago}   cls="green"  />
       </div>
 
-      <div className="erp-tabs" style={{ marginBottom:'12px' }}>
-        {STATUS_TABS.map(t => (
-          <button key={t.value} onClick={() => setStatusFilter(t.value)} className={`erp-tab ${statusFilter===t.value?'active':''}`}>{t.label}</button>
-        ))}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px', marginBottom:'4px' }}>
+        <div className="erp-tabs" style={{ marginBottom:'0', borderBottom:'none' }}>
+          {STATUS_TABS.map(t => (
+            <button key={t.value} onClick={() => setStatusFilter(t.value)} className={`erp-tab ${statusFilter===t.value?'active':''}`}>{t.label}</button>
+          ))}
+        </div>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
+          className="erp-select" style={{ width:'150px' }}>
+          <option value="">Todos os meses</option>
+          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+        </select>
       </div>
+      <div style={{ height:'1px', background:'#D8DDE6', marginBottom:'12px' }} />
 
       <div className="erp-panel">
         <table className="erp-table">

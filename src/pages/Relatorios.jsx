@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLocalState, readLocal } from '../hooks/useLocalState'
-import { uuid, formatCurrencyInt as formatCurrency, getMonthKey, monthLabel } from '../utils/helpers'
+import { uuid, formatCurrencyInt as formatCurrency, formatCurrency as fmtFull, getMonthKey, monthLabel, currentMonthKey } from '../utils/helpers'
 
 // ── Fonte de dados ────────────────────────────────────────────────────────────
 function buildAll(excluirIds) {
@@ -231,6 +231,131 @@ function PivotVendas() {
   )
 }
 
+// ── Base NFs ──────────────────────────────────────────────────────────────────
+function BaseNFs() {
+  const [mes, setMes] = useState(currentMonthKey())
+
+  const rows = useMemo(() => {
+    const financeiro = readLocal('ts_financeiro',    [])
+    const contas     = readLocal('ts_contasReceber', [])
+    const ordens     = readLocal('ts_ordens',        [])
+    const clientes   = readLocal('ts_clientes',      [])
+    const categorias = readLocal('ts_categorias',    [])
+
+    return financeiro
+      .filter(l => l.tipo === 'receita' && l.contaId && (!mes || l.data?.startsWith(mes)))
+      .map(lanc => {
+        const conta = contas.find(c => c.id === lanc.contaId)
+        if (!conta?.ordemId) return null
+        const ordem = ordens.find(o => o.id === conta.ordemId)
+        if (!ordem) return null
+        const cliente  = clientes.find(c => c.id === ordem.clienteId)
+        const categoria = categorias.find(c => c.id === ordem.categoriaId)
+        const endereco = [
+          cliente?.logradouro, cliente?.numero, cliente?.complemento,
+          cliente?.bairro, cliente?.cidade, cliente?.uf,
+        ].filter(Boolean).join(', ')
+        return {
+          nome:      cliente?.nome    || '—',
+          cpf:       cliente?.cpf     || '—',
+          endereco:  endereco         || '—',
+          os:        ordem.numero     || '—',
+          valor:     ordem.valor      || 0,
+          categoria: categoria?.nome  || '—',
+        }
+      })
+      .filter(Boolean)
+  }, [mes])
+
+  const total = rows.reduce((s, r) => s + r.valor, 0)
+
+  const exportCSV = () => {
+    const header = ['Nome Completo', 'CPF', 'Endereço', 'Ordem de Serviço', 'Valor', 'Categoria']
+    const linhas = rows.map(r => [
+      r.nome, r.cpf, r.endereco, r.os,
+      r.valor.toFixed(2).replace('.', ','),
+      r.categoria,
+    ])
+    const csv = [header, ...linhas]
+      .map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `base-nfs-${mes || 'todos'}.csv`
+    document.body.appendChild(a); a.click()
+    document.body.removeChild(a); URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px', flexWrap:'wrap', gap:'10px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          <span style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em' }}>Mês:</span>
+          <input type="month" value={mes} onChange={e => setMes(e.target.value)}
+            className="erp-input" style={{ width:'150px' }} />
+          <button onClick={() => setMes('')} className="erp-btn erp-btn-secondary erp-btn-sm">Todos</button>
+        </div>
+        <button onClick={exportCSV} disabled={rows.length === 0}
+          className="erp-btn erp-btn-success erp-btn-sm">
+          ↓ Exportar Excel (.csv)
+        </button>
+      </div>
+
+      <div style={{ fontSize:'12px', color:'#54698D', marginBottom:'12px' }}>
+        {rows.length} {rows.length === 1 ? 'registro' : 'registros'}
+        {rows.length > 0 && <> · Total: <strong style={{ color:'#16191F' }}>{fmtFull(total)}</strong></>}
+      </div>
+
+      <div className="erp-panel" style={{ overflowX:'auto' }}>
+        <table className="erp-table">
+          <thead>
+            <tr>
+              <th style={{ textAlign:'left', minWidth:'180px' }}>Nome Completo</th>
+              <th style={{ minWidth:'130px' }}>CPF</th>
+              <th style={{ minWidth:'220px' }}>Endereço</th>
+              <th style={{ minWidth:'130px' }}>Ordem de Serviço</th>
+              <th className="right" style={{ minWidth:'120px' }}>Valor</th>
+              <th style={{ minWidth:'130px' }}>Categoria</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr className="empty">
+                <td colSpan={6}>
+                  {mes
+                    ? `Nenhuma OS recebida em Bancos em ${monthLabel(mes)}`
+                    : 'Nenhuma OS recebida em Bancos'}
+                </td>
+              </tr>
+            )}
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td style={{ fontWeight:500 }}>{r.nome}</td>
+                <td className="muted">{r.cpf}</td>
+                <td className="muted" style={{ fontSize:'11px' }}>{r.endereco}</td>
+                <td className="mono">{r.os}</td>
+                <td className="right credit" style={{ fontWeight:600 }}>{fmtFull(r.valor)}</td>
+                <td className="muted">{r.categoria}</td>
+              </tr>
+            ))}
+          </tbody>
+          {rows.length > 0 && (
+            <tfoot>
+              <tr style={{ background:'#F0F2F5' }}>
+                <td colSpan={4} style={{ padding:'5px 10px', fontSize:'11px', fontWeight:700, color:'#54698D', textAlign:'right' }}>Total</td>
+                <td className="right" style={{ padding:'5px 10px', fontWeight:700, color:'#2E7D32', fontSize:'12px' }}>{fmtFull(total)}</td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ── Fluxo de Caixa ────────────────────────────────────────────────────────────
 export default function Relatorios() {
   const [tabRel, setTabRel] = useState('fluxo') // 'fluxo' | 'vendas'
@@ -378,11 +503,13 @@ export default function Relatorios() {
       </div>
 
       <div className="erp-tabs" style={{ marginBottom:'16px' }}>
-        <button onClick={() => setTabRel('fluxo')}   className={`erp-tab ${tabRel==='fluxo'  ?'active':''}`}>Fluxo de Caixa</button>
-        <button onClick={() => setTabRel('vendas')}  className={`erp-tab ${tabRel==='vendas' ?'active':''}`}>Relatório de Vendas</button>
+        <button onClick={() => setTabRel('fluxo')}   className={`erp-tab ${tabRel==='fluxo'   ?'active':''}`}>Fluxo de Caixa</button>
+        <button onClick={() => setTabRel('vendas')}  className={`erp-tab ${tabRel==='vendas'  ?'active':''}`}>Relatório de Vendas</button>
+        <button onClick={() => setTabRel('baseNfs')} className={`erp-tab ${tabRel==='baseNfs' ?'active':''}`}>Base NFs</button>
       </div>
 
-      {tabRel === 'vendas' && <PivotVendas />}
+      {tabRel === 'vendas'  && <PivotVendas />}
+      {tabRel === 'baseNfs' && <BaseNFs />}
       {tabRel === 'fluxo' && <div>
       <div className="erp-toolbar">
         <h1 className="erp-page-title">Fluxo de Caixa Consolidado</h1>

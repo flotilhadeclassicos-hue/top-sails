@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { OrdemForm } from './Ordens'
-import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber } from '../utils/helpers'
+import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 import Badge from '../components/ui/Badge'
@@ -128,8 +128,6 @@ function buildHTML(pedido, templateImagem) {
     padding:6px 0; border-bottom:1px solid #eee; font-size:13px; }
   .total-row .label  { color:#0057a8; font-weight:600; }
   .total-row .amount { color:#1a1a1a; font-weight:600; }
-  .total-row.discount .label,
-  .total-row.discount .amount { color:#0057a8; }
   .grand-total { display:flex; justify-content:space-between; align-items:center;
     padding:10px 0 0; margin-top:4px; }
   .grand-total .label  { font-size:15px; font-weight:700; color:#1a1a1a; }
@@ -190,14 +188,6 @@ function buildHTML(pedido, templateImagem) {
       ${bancosText ? `<div class="banking"><strong>Dados Bancários</strong>${bancosText}</div>` : ''}
     </div>
     <div class="totals">
-      <div class="total-row">
-        <span class="label">Subtotal</span>
-        <span class="amount">${formatCurrency(pedido.subtotal || 0)}</span>
-      </div>
-      <div class="total-row discount">
-        <span class="label">DESCONTO</span>
-        <span class="amount">${pedido.descontoValor > 0 ? '- ' + formatCurrency(pedido.descontoValor) : formatCurrency(0)}</span>
-      </div>
       <div class="grand-total">
         <span class="label">Total</span>
         <span class="amount">${formatCurrency(pedido.total || 0)}</span>
@@ -622,31 +612,10 @@ function ItensTabela({ itens, onUpdate, onAdd, onRemove, onSelectProduct }) {
   )
 }
 
-function TotaisBloco({ subtotal, descontoTipo, desconto, descontoValor, total, onChange }) {
+function TotaisBloco({ total }) {
   return (
     <div style={{ display:'flex', justifyContent:'flex-end' }}>
       <div style={{ width:'300px', background:'#fff', border:'1px solid #D8DDE6', borderRadius:'2px', overflow:'hidden' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', padding:'7px 12px', borderBottom:'1px solid #E4E7EA' }}>
-          <span style={{ fontSize:'12px', color:'#54698D' }}>Subtotal</span>
-          <span style={{ fontSize:'12px', fontWeight:600 }}>{formatCurrency(subtotal)}</span>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 12px', borderBottom:'1px solid #E4E7EA' }}>
-          <span style={{ fontSize:'12px', color:'#54698D', flex:1 }}>Desconto</span>
-          <select value={descontoTipo} onChange={e => onChange('descontoTipo', e.target.value)}
-            style={{ fontSize:'11px', border:'1px solid #D8DDE6', borderRadius:'2px', padding:'2px 5px', fontFamily:'inherit', color:'#16191F' }}>
-            <option value="valor">R$</option>
-            <option value="percentual">%</option>
-          </select>
-          <input type="number" min="0" step="0.01" value={desconto}
-            onChange={e => onChange('desconto', e.target.value)}
-            style={{ width:'80px', fontSize:'12px', border:'1px solid #D8DDE6', borderRadius:'2px', padding:'3px 6px', textAlign:'right', fontFamily:'inherit' }} />
-        </div>
-        {descontoValor > 0 && (
-          <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px', background:'#FFF8F8', borderBottom:'1px solid #E4E7EA' }}>
-            <span style={{ fontSize:'11px', color:'#C62828' }}>Valor descontado</span>
-            <span style={{ fontSize:'11px', color:'#C62828', fontWeight:600 }}>- {formatCurrency(descontoValor)}</span>
-          </div>
-        )}
         <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 12px', background:'#1C2833' }}>
           <span style={{ fontSize:'13px', fontWeight:700, color:'#AFBAC4' }}>TOTAL FINAL</span>
           <span style={{ fontSize:'17px', fontWeight:700, color:'#FFFFFF' }}>{formatCurrency(total)}</span>
@@ -712,17 +681,13 @@ function FF({ label, col, children }) {
 function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
   const [form, setForm] = useState(() => initial ? {
     ...initial,
-    desconto:     initial.desconto     ?? 0,
-    descontoTipo: initial.descontoTipo ?? 'valor',
-    itens:        initial.itens?.length ? initial.itens : [EMPTY_ITEM()],
+    itens: initial.itens?.length ? initial.itens : [EMPTY_ITEM()],
   } : {
     numero:         generatePedidoNumber(pedidos),
     data:           today(),
     clienteId:      '',
     embarcacao:     '',
     itens:          [EMPTY_ITEM()],
-    descontoTipo:   'valor',
-    desconto:       0,
     observacoes:    '',
     dadosBancarios: (() => {
       const emp = readLocal('ts_empresa', {})
@@ -739,12 +704,9 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
 
   const clientes = readLocal('ts_clientes', [])
 
-  // Computed totals (not stored in state during editing)
+  // Computed totals
   const subtotal = form.itens.reduce((s, i) => s + (parseFloat(i.precoTotal)||0), 0)
-  const descontoValor = form.descontoTipo === 'percentual'
-    ? subtotal * (parseFloat(form.desconto)||0) / 100
-    : (parseFloat(form.desconto)||0)
-  const total = Math.max(0, subtotal - descontoValor)
+  const total    = subtotal
 
   const set = (field, value) => setForm(f => ({ ...f, [field]:value }))
 
@@ -779,7 +741,7 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({ ...form, subtotal, descontoValor, total, id:form.id||uuid() })
+    onSave({ ...form, subtotal, descontoValor: 0, total, id:form.id||uuid() })
     onClose()
   }
 
@@ -829,14 +791,7 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
 
         {/* Totals */}
         <div style={{ marginBottom:'14px' }}>
-          <TotaisBloco
-            subtotal={subtotal}
-            descontoTipo={form.descontoTipo}
-            desconto={form.desconto}
-            descontoValor={descontoValor}
-            total={total}
-            onChange={set}
-          />
+          <TotaisBloco total={total} />
         </div>
 
         {/* Obs + bank data */}
@@ -852,7 +807,7 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
         {/* Actions */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
           <button type="button"
-            onClick={() => { if(initial) onPreview({ ...form, subtotal, descontoValor, total }) }}
+            onClick={() => { if(initial) onPreview({ ...form, subtotal, descontoValor: 0, total }) }}
             disabled={!initial}
             className="erp-btn erp-btn-secondary erp-btn-sm"
             title={!initial ? 'Salve o pedido primeiro para visualizar o PDF' : 'Pré-visualizar e exportar PDF'}
@@ -873,7 +828,8 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
 export default function Pedidos() {
   const [pedidos, setPedidos] = useLocalState('ts_pedidos', [])
   const [statusFilter, setStatusFilter] = useState('')
-  const [search, setSearch]  = useState('')
+  const [search,       setSearch]       = useState('')
+  const [monthFilter,  setMonthFilter]  = useState('')
   const [showForm, setShowForm]   = useState(false)
   const [editItem, setEditItem]   = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
@@ -884,6 +840,7 @@ export default function Pedidos() {
 
   const clientes = readLocal('ts_clientes', [])
 
+  const months   = [...new Set(pedidos.filter(p => p.data).map(p => p.data.substring(0, 7)))].sort().reverse()
   const filtered = useMemo(() => pedidos.filter(p => {
     const cli = clientes.find(c => c.id === p.clienteId)
     const matchS = !search ||
@@ -891,8 +848,9 @@ export default function Pedidos() {
       cli?.nome?.toLowerCase().includes(search.toLowerCase()) ||
       p.embarcacao?.toLowerCase().includes(search.toLowerCase())
     const matchT = !statusFilter || p.status === statusFilter
-    return matchS && matchT
-  }), [pedidos, search, statusFilter, clientes])
+    const matchM = !monthFilter  || p.data?.startsWith(monthFilter)
+    return matchS && matchT && matchM
+  }), [pedidos, search, statusFilter, monthFilter, clientes])
 
   const handleSave = (item) => {
     setPedidos(prev =>
@@ -978,9 +936,16 @@ export default function Pedidos() {
             </button>
           ))}
         </div>
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por número, cliente ou embarcação..."
-          className="erp-input" style={{ width:'290px', marginBottom:'1px' }} />
+        <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+          <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
+            className="erp-select" style={{ width:'140px' }}>
+            <option value="">Todos os meses</option>
+            {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por número, cliente ou embarcação..."
+            className="erp-input" style={{ width:'260px', marginBottom:'1px' }} />
+        </div>
       </div>
 
       {/* Table */}

@@ -9,6 +9,7 @@ import Financeiro from './pages/financeiro/Financeiro'
 import GestaoFinanceira from './pages/GestaoFinanceira'
 import GestaoContas from './pages/GestaoContas'
 import Relatorios from './pages/Relatorios'
+import Backup from './pages/Backup'
 import { writeLocal, readLocal, reloadAll, clearCache, preloadAll } from './hooks/useLocalState'
 import { supabase } from './lib/supabaseClient'
 import { uuid } from './utils/helpers'
@@ -92,6 +93,7 @@ export default function App() {
     gestaoFinanceira: <GestaoFinanceira />,
     gestaoContas:     <GestaoContas />,
     relatorios:       <Relatorios />,
+    backup:           <Backup user={user} />,
   }
 
   return (

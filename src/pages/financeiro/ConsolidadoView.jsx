@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useLocalState } from '../../hooks/useLocalState'
-import { formatDate, formatCurrency } from '../../utils/helpers'
+import { formatDate, formatCurrency, monthLabel } from '../../utils/helpers'
 import Badge from '../../components/ui/Badge'
 
 const FONTES = {
-  financeiro: { label:'Bancos', cor:'#0070D2', bg:'#EAF3FB' },
-  caixinha:   { label:'Caixinha',        cor:'#2E7D32', bg:'#EFFFEF' },
-  offbook:    { label:'Off Book',        cor:'#6A1B9A', bg:'#F3EEF8' },
+  financeiro: { label:'Bancos',   cor:'#0070D2', bg:'#EAF3FB' },
+  caixinha:   { label:'Caixinha', cor:'#2E7D32', bg:'#EFFFEF' },
+  reserva:    { label:'Reserva',  cor:'#B45309', bg:'#FEF3C7' },
+  offbook:    { label:'Off Book', cor:'#6A1B9A', bg:'#F3EEF8' },
 }
 
 function StatCard({ label, value, color }) {
@@ -25,41 +26,47 @@ function StatCard({ label, value, color }) {
 }
 
 export default function ConsolidadoView() {
-  const [search,     setSearch]     = useState('')
-  const [tipoFilter, setTipoFilter] = useState('')
-  const [fonteFilter,setFonteFilter]= useState('')
+  const [search,      setSearch]      = useState('')
+  const [tipoFilter,  setTipoFilter]  = useState('')
+  const [fonteFilter, setFonteFilter] = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
 
   const [categorias]  = useLocalState('ts_categorias', [])
   const [financeiro]  = useLocalState('ts_financeiro', [])
   const [caixinha]    = useLocalState('ts_caixinha',   [])
+  const [reserva]     = useLocalState('ts_reserva',    [])
   const [offBookRaw]  = useLocalState('ts_offBook',    [])
 
-  // Monta lista consolidada com fonte
+  // Monta lista consolidada com fonte (Caixinha USD excluída — não consolidada)
   const all = [
     ...financeiro.map(i => ({ ...i, _fonte:'financeiro' })),
     ...caixinha.map(i =>   ({ ...i, _fonte:'caixinha'   })),
+    ...reserva.map(i =>    ({ ...i, _fonte:'reserva'    })),
     ...offBookRaw.filter(i => !i.parteId).map(i => ({ ...i, _fonte:'offbook' })),
   ].sort((a, b) => (b.data || '').localeCompare(a.data || ''))
 
-  const filtered = all.filter(i => {
+  const months     = [...new Set(all.filter(i => i.data).map(i => i.data.substring(0, 7)))].sort().reverse()
+  const monthAll   = monthFilter ? all.filter(i => i.data?.startsWith(monthFilter)) : all
+
+  const filtered = monthAll.filter(i => {
     const cat = categorias.find(c => c.id === i.categoriaId)
     const matchS = !search ||
       i.descricao?.toLowerCase().includes(search.toLowerCase()) ||
       cat?.nome?.toLowerCase().includes(search.toLowerCase())
-    const matchT = !tipoFilter  || i.tipo    === tipoFilter
-    const matchF = !fonteFilter || i._fonte  === fonteFilter
+    const matchT = !tipoFilter  || i.tipo   === tipoFilter
+    const matchF = !fonteFilter || i._fonte === fonteFilter
     return matchS && matchT && matchF
   })
 
-  const totalC = all.filter(i => i.tipo === 'receita').reduce((s, i) => s + (i.valor || 0), 0)
-  const totalD = all.filter(i => i.tipo === 'despesa').reduce((s, i) => s + (i.valor || 0), 0)
+  const totalC = monthAll.filter(i => i.tipo === 'receita').reduce((s, i) => s + (i.valor || 0), 0)
+  const totalD = monthAll.filter(i => i.tipo === 'despesa').reduce((s, i) => s + (i.valor || 0), 0)
   const saldo  = totalC - totalD
 
   return (
     <div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px' }}>
         <h2 style={{ margin:0, fontSize:'13px', fontWeight:600, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.04em' }}>
-          Consolidado — Bancos + Caixinha + Off Book
+          Consolidado — Bancos + Caixinha + Reserva + Off Book
         </h2>
       </div>
 
@@ -83,17 +90,22 @@ export default function ConsolidadoView() {
 
       <div className="erp-filter-row">
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar..." className="erp-input" style={{ width:'220px' }} />
+          placeholder="Buscar..." className="erp-input" style={{ width:'180px' }} />
         <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)}
-          className="erp-select" style={{ width:'130px' }}>
+          className="erp-select" style={{ width:'120px' }}>
           <option value="">Todos tipos</option>
           <option value="receita">Créditos</option>
           <option value="despesa">Débitos</option>
         </select>
         <select value={fonteFilter} onChange={e => setFonteFilter(e.target.value)}
-          className="erp-select" style={{ width:'150px' }}>
+          className="erp-select" style={{ width:'130px' }}>
           <option value="">Todas as contas</option>
           {Object.entries(FONTES).map(([k, f]) => <option key={k} value={k}>{f.label}</option>)}
+        </select>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
+          className="erp-select" style={{ width:'140px' }}>
+          <option value="">Todos os meses</option>
+          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
       </div>
 

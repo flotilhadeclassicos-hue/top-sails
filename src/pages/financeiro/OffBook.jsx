@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
-import { uuid, formatDate, formatCurrency, today } from '../../utils/helpers'
+import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Badge from '../../components/ui/Badge'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 
@@ -120,17 +120,20 @@ function EditModal({ item, onClose, onDone }) {
 
 export default function OffBook() {
   const [items, setItems] = useLocalState('ts_offBook', [])
-  const [search,     setSearch]     = useState('')
-  const [tipoFilter, setTipoFilter] = useState('')
-  const [cadeiaId,   setCadeiaId]   = useState(null)
-  const [editItem,   setEditItem]   = useState(null)
-  const [deleteItem, setDeleteItem] = useState(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [search,      setSearch]      = useState('')
+  const [tipoFilter,  setTipoFilter]  = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
+  const [cadeiaId,    setCadeiaId]    = useState(null)
+  const [editItem,    setEditItem]    = useState(null)
+  const [deleteItem,  setDeleteItem]  = useState(null)
+  const [refreshKey,  setRefreshKey]  = useState(0)
 
   const categorias = readLocal('ts_categorias', [])
   const semParteId = items.filter(i => !i.parteId)
+  const months     = [...new Set(semParteId.filter(i => i.data).map(i => i.data.substring(0, 7)))].sort().reverse()
+  const monthItems = monthFilter ? semParteId.filter(i => i.data?.startsWith(monthFilter)) : semParteId
 
-  const filtered = semParteId.filter(i => {
+  const filtered = monthItems.filter(i => {
     const cat = categorias.find(c => c.id === i.categoriaId)
     const matchS = !search ||
       i.descricao?.toLowerCase().includes(search.toLowerCase()) ||
@@ -138,8 +141,8 @@ export default function OffBook() {
     return matchS && (!tipoFilter || i.tipo === tipoFilter)
   })
 
-  const totalC = semParteId.filter(i => i.tipo==='receita').reduce((s,i) => s+(i.valor||0), 0)
-  const totalD = semParteId.filter(i => i.tipo==='despesa').reduce((s,i) => s+(i.valor||0), 0)
+  const totalC = monthItems.filter(i => i.tipo==='receita').reduce((s,i) => s+(i.valor||0), 0)
+  const totalD = monthItems.filter(i => i.tipo==='despesa').reduce((s,i) => s+(i.valor||0), 0)
   const saldo  = totalC - totalD
 
   return (
@@ -156,12 +159,17 @@ export default function OffBook() {
 
       <div className="erp-filter-row">
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar..." className="erp-input" style={{ width:'240px' }} />
+          placeholder="Buscar..." className="erp-input" style={{ width:'200px' }} />
         <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)}
-          className="erp-select" style={{ width:'140px' }}>
+          className="erp-select" style={{ width:'130px' }}>
           <option value="">Todos os tipos</option>
           <option value="receita">Créditos</option>
           <option value="despesa">Débitos</option>
+        </select>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
+          className="erp-select" style={{ width:'140px' }}>
+          <option value="">Todos os meses</option>
+          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
       </div>
 

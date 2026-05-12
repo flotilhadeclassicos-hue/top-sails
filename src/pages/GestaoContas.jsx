@@ -295,40 +295,55 @@ export default function GestaoContas() {
         <MonthSelector value={mes} onChange={setMes} />
       </div>
 
-      {partes.length===0 && (
-        <div className="erp-panel" style={{ padding:'40px', textAlign:'center', color:'#8A99A8', fontSize:'13px' }}>
-          Nenhuma parte relacionada cadastrada. Clique em "+ Nova Parte" para iniciar.
-        </div>
-      )}
-
-      <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        {partes.map(parte => {
-          const stats = getStats(parte.id)
-          return (
-            <div key={parte.id} className="erp-panel" style={{ padding:'16px 18px' }}>
-              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'12px' }}>
-                <div>
-                  <div style={{ fontSize:'13px', fontWeight:700, color:'#16191F' }}>{parte.nome}</div>
-                  <div style={{ fontSize:'11px', color:'#8A99A8', marginTop:'2px' }}>
-                    {parte.tipo}{parte.observacao ? ` · ${parte.observacao}` : ''}
-                  </div>
-                </div>
-                <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-                  <button onClick={() => setExtratoParte(parte)} className="erp-btn erp-btn-secondary erp-btn-sm">Ver Extrato</button>
-                  <button onClick={() => { setEditParte(parte); setShowParteForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
-                  <button onClick={() => setDeleteParte(parte)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
-                </div>
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px' }}>
-                <StatCard label="Saldo Inicial"                   value={stats.saldoInicial} cls={stats.saldoInicial>=0?'blue':'orange'} />
-                <StatCard label={`Créditos — ${monthLabel(mes)}`} value={stats.creditos}     cls="green" />
-                <StatCard label={`Débitos — ${monthLabel(mes)}`}  value={stats.debitos}      cls="red"   />
-                <StatCard label={`Movimento — ${monthLabel(mes)}`}value={stats.movimento}    cls={stats.movimento>=0?'green':'red'} />
-                <StatCard label="Saldo Final"                     value={stats.saldoFinal}   cls={stats.saldoFinal>=0?'blue':'orange'} />
-              </div>
-            </div>
-          )
-        })}
+      <div className="erp-panel" style={{ overflowX:'auto' }}>
+        <table className="erp-table">
+          <thead>
+            <tr>
+              <th style={{ textAlign:'left', minWidth:'180px' }}>Conta</th>
+              <th className="right" style={{ minWidth:'110px' }}>Saldo Inicial</th>
+              <th className="right" style={{ minWidth:'110px' }}>Créditos</th>
+              <th className="right" style={{ minWidth:'110px' }}>Débitos</th>
+              <th className="right" style={{ minWidth:'110px' }}>Movimento</th>
+              <th className="right" style={{ minWidth:'110px' }}>Saldo Final</th>
+              <th style={{ minWidth:'180px' }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {partes.length===0 && (
+              <tr className="empty">
+                <td colSpan={7}>Nenhuma parte relacionada cadastrada. Clique em "+ Nova Parte" para iniciar.</td>
+              </tr>
+            )}
+            {partes.map(parte => {
+              const { saldoInicial, creditos, debitos, movimento, saldoFinal } = getStats(parte.id)
+              return (
+                <tr key={parte.id}>
+                  <td style={{ fontWeight:600, color:'#16191F', fontSize:'12px' }}>{parte.nome}</td>
+                  <td className="right">
+                    <span style={{ fontWeight:600, color:saldoInicial>=0?'#0070D2':'#E65100' }}>{formatCurrency(saldoInicial)}</span>
+                  </td>
+                  <td className="right credit" style={{ fontWeight:600 }}>{formatCurrency(creditos)}</td>
+                  <td className="right debit"  style={{ fontWeight:600 }}>{formatCurrency(debitos)}</td>
+                  <td className="right">
+                    <span style={{ fontWeight:600, color:movimento>=0?'#2E7D32':'#C62828' }}>
+                      {movimento>0?'+':''}{formatCurrency(movimento)}
+                    </span>
+                  </td>
+                  <td className="right">
+                    <span style={{ fontWeight:600, color:saldoFinal>=0?'#0070D2':'#E65100' }}>{formatCurrency(saldoFinal)}</span>
+                  </td>
+                  <td>
+                    <span style={{ display:'flex', gap:'6px' }}>
+                      <button onClick={() => setExtratoParte(parte)} className="erp-btn erp-btn-secondary erp-btn-xs">Ver Extrato</button>
+                      <button onClick={() => { setEditParte(parte); setShowParteForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
+                      <button onClick={() => setDeleteParte(parte)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
       {showParteForm && <ParteForm initial={editParte} onClose={() => setShowParteForm(false)} />}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useLocalState } from '../../hooks/useLocalState'
-import { uuid, formatDate, formatCurrency, today } from '../../utils/helpers'
+import { useLocalState, writeLocal } from '../../hooks/useLocalState'
+import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
 
@@ -14,9 +14,9 @@ function StatCard({ label, value, cls }) {
 }
 
 function FormModal({ initial, storageKey, onClose }) {
-  const [items, setItems]   = useLocalState(storageKey, [])
-  const [categorias]        = useLocalState('ts_categorias', [])
-  const [partes]            = useLocalState('ts_partes', [])
+  const [items]      = useLocalState(storageKey, [])
+  const [categorias] = useLocalState('ts_categorias', [])
+  const [partes]     = useLocalState('ts_partes', [])
 
   const [form, setForm] = useState(() => initial
     ? { tipo:initial.tipo, descricao:initial.descricao, categoriaId:initial.categoriaId, parteId:initial.parteId||'', valor:initial.valor, data:initial.data }
@@ -31,9 +31,9 @@ function FormModal({ initial, storageKey, onClose }) {
     e.preventDefault()
     const payload = { ...form, valor:parseFloat(form.valor)||0, parteId:form.parteId||null }
     if (initial) {
-      setItems(prev => prev.map(i => i.id === initial.id ? { ...i, ...payload } : i))
+      writeLocal(storageKey, items.map(i => i.id === initial.id ? { ...i, ...payload } : i))
     } else {
-      setItems(prev => [...prev, { id:uuid(), baixaCruzadaId:null, contaId:null, ...payload }])
+      writeLocal(storageKey, [...items, { id:uuid(), baixaCruzadaId:null, contaId:null, ...payload }])
     }
     onClose()
   }
@@ -93,23 +93,27 @@ function FormModal({ initial, storageKey, onClose }) {
 
 export default function LancamentosTab({ storageKey, title }) {
   const [items, setItems] = useLocalState(storageKey, [])
-  const [search, setSearch] = useState('')
-  const [tipoFilter, setTipoFilter] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState(null)
-  const [deleteItem, setDeleteItem] = useState(null)
+  const [search,      setSearch]      = useState('')
+  const [tipoFilter,  setTipoFilter]  = useState('')
+  const [monthFilter, setMonthFilter] = useState('')
+  const [showForm,    setShowForm]    = useState(false)
+  const [editItem,    setEditItem]    = useState(null)
+  const [deleteItem,  setDeleteItem]  = useState(null)
 
   const [categorias] = useLocalState('ts_categorias', [])
 
-  const filtered = items.filter(i => {
+  const months = [...new Set(items.filter(i => i.data).map(i => i.data.substring(0, 7)))].sort().reverse()
+  const monthItems = monthFilter ? items.filter(i => i.data?.startsWith(monthFilter)) : items
+
+  const filtered = monthItems.filter(i => {
     const cat = categorias.find(c => c.id === i.categoriaId)
     const matchS = !search || i.descricao?.toLowerCase().includes(search.toLowerCase()) || cat?.nome?.toLowerCase().includes(search.toLowerCase())
     const matchT = !tipoFilter || i.tipo === tipoFilter
     return matchS && matchT
   })
 
-  const totalC = items.filter(i => i.tipo==='receita').reduce((s,i) => s+(i.valor||0), 0)
-  const totalD = items.filter(i => i.tipo==='despesa').reduce((s,i) => s+(i.valor||0), 0)
+  const totalC = monthItems.filter(i => i.tipo==='receita').reduce((s,i) => s+(i.valor||0), 0)
+  const totalD = monthItems.filter(i => i.tipo==='despesa').reduce((s,i) => s+(i.valor||0), 0)
   const saldo  = totalC - totalD
 
   return (
@@ -126,11 +130,15 @@ export default function LancamentosTab({ storageKey, title }) {
       </div>
 
       <div className="erp-filter-row">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="erp-input" style={{ width:'240px' }} />
-        <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)} className="erp-select" style={{ width:'140px' }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="erp-input" style={{ width:'200px' }} />
+        <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)} className="erp-select" style={{ width:'130px' }}>
           <option value="">Todos os tipos</option>
           <option value="receita">Créditos</option>
           <option value="despesa">Débitos</option>
+        </select>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="erp-select" style={{ width:'140px' }}>
+          <option value="">Todos os meses</option>
+          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
       </div>
 
