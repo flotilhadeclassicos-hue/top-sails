@@ -240,7 +240,6 @@ function BaseNFs() {
     const contas     = readLocal('ts_contasReceber', [])
     const ordens     = readLocal('ts_ordens',        [])
     const clientes   = readLocal('ts_clientes',      [])
-    const categorias = readLocal('ts_categorias',    [])
 
     return financeiro
       .filter(l => l.tipo === 'receita' && l.contaId && (!mes || l.data?.startsWith(mes)))
@@ -250,18 +249,17 @@ function BaseNFs() {
         const ordem = ordens.find(o => o.id === conta.ordemId)
         if (!ordem) return null
         const cliente  = clientes.find(c => c.id === ordem.clienteId)
-        const categoria = categorias.find(c => c.id === ordem.categoriaId)
         const endereco = [
           cliente?.logradouro, cliente?.numero, cliente?.complemento,
           cliente?.bairro, cliente?.cidade, cliente?.uf,
         ].filter(Boolean).join(', ')
         return {
-          nome:      cliente?.nome    || '—',
-          cpf:       cliente?.cpf     || '—',
-          endereco:  endereco         || '—',
-          os:        ordem.numero     || '—',
-          valor:     ordem.valor      || 0,
-          categoria: categoria?.nome  || '—',
+          nome:        cliente?.nome       || '—',
+          cpf:         cliente?.cpf        || '—',
+          endereco:    endereco            || '—',
+          os:          ordem.numero        || '—',
+          valor:       ordem.valor         || 0,
+          observacao:  ordem.observacoes   || '—',
         }
       })
       .filter(Boolean)
@@ -270,11 +268,11 @@ function BaseNFs() {
   const total = rows.reduce((s, r) => s + r.valor, 0)
 
   const exportCSV = () => {
-    const header = ['Nome Completo', 'CPF', 'Endereço', 'Ordem de Serviço', 'Valor', 'Categoria']
+    const header = ['Nome Completo', 'CPF', 'Endereço', 'Ordem de Serviço', 'Valor', 'Observação']
     const linhas = rows.map(r => [
       r.nome, r.cpf, r.endereco, r.os,
       r.valor.toFixed(2).replace('.', ','),
-      r.categoria,
+      r.observacao,
     ])
     const csv = [header, ...linhas]
       .map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';'))
@@ -317,7 +315,7 @@ function BaseNFs() {
               <th style={{ minWidth:'220px' }}>Endereço</th>
               <th style={{ minWidth:'130px' }}>Ordem de Serviço</th>
               <th className="right" style={{ minWidth:'120px' }}>Valor</th>
-              <th style={{ minWidth:'130px' }}>Categoria</th>
+              <th style={{ minWidth:'180px' }}>Observação</th>
             </tr>
           </thead>
           <tbody>
@@ -337,7 +335,7 @@ function BaseNFs() {
                 <td className="muted" style={{ fontSize:'11px' }}>{r.endereco}</td>
                 <td className="mono">{r.os}</td>
                 <td className="right credit" style={{ fontWeight:600 }}>{fmtFull(r.valor)}</td>
-                <td className="muted">{r.categoria}</td>
+                <td className="muted" style={{ fontSize:'11px' }}>{r.observacao}</td>
               </tr>
             ))}
           </tbody>
