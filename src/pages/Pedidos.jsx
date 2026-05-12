@@ -67,10 +67,13 @@ function buildHTML(pedido, templateImagem) {
     ? bancosLinhas.join('<br>')
     : (pedido.dadosBancarios || '').trim().replace(/\n/g, '<br>')
 
+  const titulo = `${pedido.numero}${cliente ? ' — ' + cliente.nome : ''}`
+
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<title>${titulo}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
