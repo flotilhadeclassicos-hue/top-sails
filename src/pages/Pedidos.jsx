@@ -506,10 +506,20 @@ function StatCard({ label, value, cls }) {
 
 function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
   const [open, setOpen] = useState(false)
+  const [dropPos, setDropPos] = useState({ top:0, left:0, width:0 })
+  const inputRef = useRef(null)
 
   const sugestoes = item.descricao.trim().length > 0
     ? produtos.filter(p => p.nome.toLowerCase().includes(item.descricao.toLowerCase()))
     : produtos
+
+  const openDrop = () => {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect()
+      setDropPos({ top: r.bottom, left: r.left, width: r.width })
+    }
+    setOpen(true)
+  }
 
   const handleSelect = (produto) => {
     onSelectProduct(item.id, produto)
@@ -519,11 +529,12 @@ function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
   return (
     <tr key={item.id} style={{ background: idx%2===0?'#fff':'#FAFBFC' }}>
       {/* Descrição com autocomplete */}
-      <td style={{ padding:0, position:'relative' }}>
+      <td style={{ padding:0 }}>
         <input
+          ref={inputRef}
           value={item.descricao}
-          onChange={e => { onUpdate(item.id, 'descricao', e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
+          onChange={e => { onUpdate(item.id, 'descricao', e.target.value); openDrop() }}
+          onFocus={openDrop}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           className="table-input"
           placeholder="Digite ou selecione um produto..."
@@ -531,7 +542,8 @@ function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
         />
         {open && sugestoes.length > 0 && (
           <div style={{
-            position:'absolute', top:'100%', left:0, right:0, zIndex:200,
+            position:'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width,
+            zIndex:9999,
             background:'#fff', border:'1px solid #D8DDE6', borderTop:'none',
             borderRadius:'0 0 2px 2px', boxShadow:'0 4px 12px rgba(0,0,0,.12)',
             maxHeight:'180px', overflowY:'auto',
