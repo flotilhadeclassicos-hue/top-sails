@@ -1062,7 +1062,7 @@ export default function Pedidos() {
           onClose={() => setOsSourcePedido(null)}
         />
       )}
-      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} />}
+      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} onOpenPedido={p => { setClienteModal(null); setPreviewPedido(p) }} />}
     </div>
   )
 }

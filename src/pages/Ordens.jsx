@@ -421,7 +421,7 @@ export default function Ordens() {
           onConfirm={() => handleDelete(deleteItem)} onClose={() => setDeleteItem(null)} />
       )}
       {baixaItem && <BaixaModal conta={baixaItem} onClose={() => setBaixaItem(null)} onDone={() => setRefreshKey(k => k+1)} />}
-      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} />}
+      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} onOpenPedido={p => { setClienteModal(null); setPreviewPedido(p) }} />}
       {viewOrdem && <OrdemViewModal ordem={viewOrdem} onClose={() => setViewOrdem(null)} />}
       {previewPedido && <PreviewModal pedido={previewPedido} onClose={() => setPreviewPedido(null)} />}
     </div>

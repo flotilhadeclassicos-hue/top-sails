@@ -4,6 +4,7 @@ import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
 import ClienteModal, { LinkBtn } from '../../components/ui/ClienteModal'
+import { PreviewModal } from '../Pedidos'
 
 function StatCard({ label, value, cls }) {
   return (
@@ -188,6 +189,7 @@ export default function ContasReceber() {
   const [deleteItem, setDeleteItem] = useState(null)
   const [cadeiaId, setCadeiaId] = useState(null)
   const [clienteModal, setClienteModal] = useState(null)
+  const [previewPedido, setPreviewPedido] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [statusFilter, setStatusFilter] = useState('aberto')
   const [monthFilter,  setMonthFilter]  = useState('')
@@ -324,7 +326,8 @@ export default function ContasReceber() {
       {baixaItem && <BaixaModal conta={baixaItem} onClose={() => setBaixaItem(null)} onDone={refresh} />}
       {deleteItem && <ConfirmModal title="Excluir Conta" message={`Excluir "${deleteItem.descricao}"?`} danger onConfirm={() => setContas(prev => prev.filter(c => c.id!==deleteItem.id))} onClose={() => setDeleteItem(null)} />}
       {cadeiaId && <CadeiaModal id={cadeiaId} onClose={() => setCadeiaId(null)} />}
-      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} />}
+      {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} onOpenPedido={p => { setClienteModal(null); setPreviewPedido(p) }} />}
+      {previewPedido && <PreviewModal pedido={previewPedido} onClose={() => setPreviewPedido(null)} />}
     </div>
   )
 }
