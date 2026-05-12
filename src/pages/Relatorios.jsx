@@ -259,7 +259,7 @@ function BaseNFs() {
           endereco:    endereco            || '—',
           os:          ordem.numero        || '—',
           valor:       ordem.valor         || 0,
-          observacao:  ordem.observacoes   || '—',
+          observacao:  ordem.descricao      || '—',
         }
       })
       .filter(Boolean)
