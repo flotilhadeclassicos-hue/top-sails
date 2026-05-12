@@ -78,6 +78,11 @@ function buildHTML(pedido, templateImagem) {
   @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Open Sans',Arial,sans-serif; background:#fff; }
+  @media print {
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { margin:0; }
+    .page { padding-top:120px; }
+  }
   .page {
     width:794px; padding:120px 50px 50px; position:relative;
     ${templateImagem
