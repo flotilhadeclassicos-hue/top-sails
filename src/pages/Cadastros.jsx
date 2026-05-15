@@ -564,8 +564,15 @@ function Usuarios() {
 
     const { data, error } = await supabase.functions.invoke('admin-update-user', { body })
 
-    if (error || data?.error) {
-      setStatus({ type:'error', text: error?.message || data?.error })
+    if (error) {
+      let msg = error.message
+      try { const b = await error.context?.json?.(); if (b?.error) msg = b.error } catch {}
+      setStatus({ type:'error', text: msg })
+      setSaving(false)
+      return
+    }
+    if (data?.error) {
+      setStatus({ type:'error', text: data.error })
       setSaving(false)
       return
     }
