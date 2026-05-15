@@ -511,11 +511,19 @@ function Usuarios() {
 
   const [status, setStatus] = useState(null) // { type:'ok'|'error'|'warn', text }
   const [saving, setSaving] = useState(false)
+  const [syncError, setSyncError] = useState(null)
 
-  // Carrega lista real do Supabase Auth para detectar dessincronias
+  // Carrega lista real do Supabase Auth
   useEffect(() => {
     supabase.functions.invoke('admin-update-user', { body: { action: 'list' } })
-      .then(({ data }) => { if (data?.ok) setAuthUsers(data.users) })
+      .then(({ data, error }) => {
+        if (data?.ok) {
+          setAuthUsers(data.users)
+        } else {
+          setSyncError(data?.error || error?.message || 'Erro ao sincronizar com Supabase Auth')
+        }
+      })
+      .catch(e => setSyncError(e.message))
   }, [])
 
   // Lista exibida: mesclagem de ts_perfis com dados reais do Auth
@@ -612,6 +620,7 @@ function Usuarios() {
       <Toolbar title="Usuários do Sistema" breadcrumb="Usuários" onAdd={handleOpenNew} />
 
       {status && !openNew && !editTarget && <StatusBox s={status} />}
+      {syncError && <StatusBox s={{ type:'error', text: `Sync Auth: ${syncError}` }} />}
 
       <div className="erp-panel">
         <table className="erp-table">
