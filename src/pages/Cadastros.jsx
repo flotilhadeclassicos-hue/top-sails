@@ -579,7 +579,7 @@ function Usuarios() {
     }
 
     setEditTarget(null)
-    setStatus({ type:'ok', text: 'Usuário atualizado com sucesso.' })
+    setStatus({ type:'ok', text: `Usuário ${data.email} atualizado com sucesso.` })
     setSaving(false)
   }
 
