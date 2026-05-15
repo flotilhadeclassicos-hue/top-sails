@@ -558,7 +558,7 @@ function Usuarios() {
     setSaving(true)
     setStatus(null)
 
-    const body = { userId: editTarget.id }
+    const body = { email: editTarget.email }
     if (formEdit.nomeCompleto.trim()) body.nomeCompleto = formEdit.nomeCompleto.trim()
     if (formEdit.senha)               body.password     = formEdit.senha
 

@@ -23,19 +23,34 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
+    const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
-    if (authError || !user) {
+    if (authError || !caller) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
-    const { userId, password, nomeCompleto } = await req.json()
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'userId obrigatório' }), {
+    const { email, password, nomeCompleto } = await req.json()
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'email obrigatório' }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Busca o usuário pelo e-mail para garantir o ID correto
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    if (listError) {
+      return new Response(JSON.stringify({ error: listError.message }), {
+        status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const target = listData.users.find(u => u.email === email)
+    if (!target) {
+      return new Response(JSON.stringify({ error: `Usuário não encontrado: ${email}` }), {
+        status: 404, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
@@ -43,7 +58,7 @@ Deno.serve(async (req) => {
     if (password)     updates.password = password
     if (nomeCompleto) updates.data = { nomeCompleto }
 
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, updates)
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(target.id, updates)
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
