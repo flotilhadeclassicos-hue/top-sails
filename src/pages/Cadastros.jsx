@@ -505,7 +505,7 @@ function Usuarios() {
 
   // modal editar
   const [editTarget, setEditTarget] = useState(null) // perfil sendo editado
-  const [formEdit, setFormEdit]     = useState({ nomeCompleto:'', senha:'' })
+  const [formEdit, setFormEdit]     = useState({ nomeCompleto:'', email:'', senha:'' })
   const [showPwdEdit, setShowPwdEdit] = useState(false)
 
   const [status, setStatus] = useState(null) // { type:'ok'|'error'|'warn', text }
@@ -515,7 +515,7 @@ function Usuarios() {
 
   const handleOpenEdit = (p) => {
     setEditTarget(p)
-    setFormEdit({ nomeCompleto: p.nomeCompleto, senha:'' })
+    setFormEdit({ nomeCompleto: p.nomeCompleto, email: p.email, senha:'' })
     setShowPwdEdit(false)
     setStatus(null)
   }
@@ -558,7 +558,7 @@ function Usuarios() {
     setSaving(true)
     setStatus(null)
 
-    const body = { email: editTarget.email }
+    const body = { email: formEdit.email }
     if (formEdit.nomeCompleto.trim()) body.nomeCompleto = formEdit.nomeCompleto.trim()
     if (formEdit.senha)               body.password     = formEdit.senha
 
@@ -656,10 +656,16 @@ function Usuarios() {
       {editTarget && (
         <Modal title={`Editar — ${editTarget.email}`} onClose={() => setEditTarget(null)}>
           <form onSubmit={handleEdit}>
-            <FField label="Nome Completo">
-              <input value={formEdit.nomeCompleto} onChange={e => setFormEdit(f => ({ ...f, nomeCompleto:e.target.value }))}
-                className="erp-input" />
-            </FField>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+              <FField label="Nome Completo">
+                <input value={formEdit.nomeCompleto} onChange={e => setFormEdit(f => ({ ...f, nomeCompleto:e.target.value }))}
+                  className="erp-input" />
+              </FField>
+              <FField label="E-mail">
+                <input type="email" value={formEdit.email} onChange={e => setFormEdit(f => ({ ...f, email:e.target.value }))}
+                  required className="erp-input" />
+              </FField>
+            </div>
             <FField label="Nova Senha (deixe em branco para não alterar)">
               <div style={{ position:'relative' }}>
                 <input type={showPwdEdit ? 'text' : 'password'} value={formEdit.senha} minLength={6}
