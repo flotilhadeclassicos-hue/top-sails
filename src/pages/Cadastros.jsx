@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocalState, writeLocal, readLocal } from '../hooks/useLocalState'
 import { supabase } from '../lib/supabaseClient'
 import { uuid } from '../utils/helpers'
@@ -497,6 +497,7 @@ function Fornecedores() {
 // ── Usuários ──────────────────────────────────────────────────────────────────
 function Usuarios() {
   const [perfis, setPerfis] = useLocalState('ts_perfis', [])
+  const [authUsers, setAuthUsers] = useState(null) // usuários reais do Supabase Auth
 
   // modal criar
   const [openNew, setOpenNew]   = useState(false)
@@ -510,6 +511,20 @@ function Usuarios() {
 
   const [status, setStatus] = useState(null) // { type:'ok'|'error'|'warn', text }
   const [saving, setSaving] = useState(false)
+
+  // Carrega lista real do Supabase Auth para detectar dessincronias
+  useEffect(() => {
+    supabase.functions.invoke('admin-update-user', { body: { action: 'list' } })
+      .then(({ data }) => { if (data?.ok) setAuthUsers(data.users) })
+  }, [])
+
+  // Lista exibida: mesclagem de ts_perfis com dados reais do Auth
+  const lista = authUsers
+    ? authUsers.map(au => {
+        const p = perfis.find(p => p.email?.toLowerCase() === au.email?.toLowerCase())
+        return { id: au.id, email: au.email, nomeCompleto: p?.nomeCompleto || au.email, confirmed: au.confirmed }
+      })
+    : perfis
 
   const handleOpenNew = () => { setFormNew({ nomeCompleto:'', email:'', senha:'' }); setStatus(null); setShowPwdNew(false); setOpenNew(true) }
 
@@ -601,14 +616,17 @@ function Usuarios() {
       <div className="erp-panel">
         <table className="erp-table">
           <thead><tr>
-            <th>Nome</th><th>E-mail</th><th style={{ width:60 }}></th>
+            <th>Nome</th><th>E-mail</th><th style={{ width:90 }}>Status</th><th style={{ width:60 }}></th>
           </tr></thead>
           <tbody>
-            {perfis.length === 0 && <tr className="empty"><td colSpan={3}>Nenhum usuário registrado aqui ainda</td></tr>}
-            {perfis.map(p => (
-              <tr key={p.id}>
+            {lista.length === 0 && <tr className="empty"><td colSpan={4}>{authUsers === null ? 'Carregando...' : 'Nenhum usuário registrado'}</td></tr>}
+            {lista.map(p => (
+              <tr key={p.id || p.email}>
                 <td style={{ fontWeight:500 }}>{p.nomeCompleto}</td>
                 <td className="muted">{p.email}</td>
+                <td style={{ fontSize:'11px', color: p.confirmed === false ? '#C62828' : p.confirmed === true ? '#1B5E20' : '#54698D' }}>
+                  {p.confirmed === false ? 'Não confirmado' : p.confirmed === true ? 'Confirmado' : '—'}
+                </td>
                 <td>
                   <button onClick={() => handleOpenEdit(p)} className="erp-btn erp-btn-secondary"
                     style={{ padding:'3px 10px', fontSize:'11px' }}>Editar</button>

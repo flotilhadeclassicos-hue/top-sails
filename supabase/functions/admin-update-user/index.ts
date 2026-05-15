@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return err('Unauthorized: sem header')
+    if (!authHeader) return err('Unauthorized')
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -26,39 +26,43 @@ Deno.serve(async (req) => {
     if (authError || !caller) return err('Unauthorized: token inválido')
 
     const body = await req.json()
-    console.log('[admin-update-user] body recebido:', JSON.stringify(body))
+    const { action, email, password, nomeCompleto } = body
 
-    const { email, password, nomeCompleto } = body
+    // ── Listar todos os usuários do Supabase Auth ──────────────────────────
+    if (action === 'list') {
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+      if (listError) return err(`listUsers: ${listError.message}`)
+      const users = listData.users.map((u: { id: string; email?: string; created_at: string; email_confirmed_at?: string }) => ({
+        id: u.id,
+        email: u.email,
+        created_at: u.created_at,
+        confirmed: !!u.email_confirmed_at,
+      }))
+      return ok({ users })
+    }
 
-    if (!email) return err(`email obrigatório — body recebido: ${JSON.stringify(body)}`)
+    // ── Atualizar senha / nome ─────────────────────────────────────────────
+    if (!email) return err('email obrigatório')
 
-    // Lista todos os usuários para encontrar pelo e-mail
     const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
-    if (listError) return err(`listUsers falhou: ${listError.message}`)
-
-    const total = listData.users.length
-    const emails = listData.users.map((u: { email?: string }) => u.email)
-    console.log(`[admin-update-user] ${total} usuários encontrados:`, emails)
+    if (listError) return err(`listUsers: ${listError.message}`)
 
     const target = listData.users.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase())
-    if (!target) return err(`Usuário não encontrado: "${email}" — usuários existentes: ${emails.join(', ')}`)
+    if (!target) {
+      const allEmails = listData.users.map((u: { email?: string }) => u.email).join(', ')
+      return err(`Usuário não encontrado: "${email}". Existentes: ${allEmails}`)
+    }
 
-    console.log('[admin-update-user] target encontrado:', target.id, target.email)
-
-    const updates: Record<string, unknown> = {}
+    const updates: Record<string, unknown> = { email_confirm: true }
     if (password)     updates.password = password
     if (nomeCompleto) updates.data = { nomeCompleto }
 
-    if (Object.keys(updates).length === 0) return err('Nenhuma alteração informada')
-
     const { data: updData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(target.id, updates)
-    if (updateError) return err(`updateUserById falhou: ${updateError.message}`)
+    if (updateError) return err(`update falhou: ${updateError.message}`)
 
-    console.log('[admin-update-user] atualizado com sucesso:', updData.user.id)
-    return ok({ userId: updData.user.id, email: updData.user.email, updatedAt: updData.user.updated_at })
+    return ok({ userId: updData.user.id, email: updData.user.email, confirmed: !!updData.user.email_confirmed_at })
 
   } catch (e) {
-    console.error('[admin-update-user] exceção:', e)
     return err(`Exceção: ${(e as Error).message}`)
   }
 })
