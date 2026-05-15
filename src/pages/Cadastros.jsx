@@ -497,23 +497,39 @@ function Fornecedores() {
 // ── Usuários ──────────────────────────────────────────────────────────────────
 function Usuarios() {
   const [perfis, setPerfis] = useLocalState('ts_perfis', [])
-  const [open, setOpen]     = useState(false)
-  const [form, setForm]     = useState({ nomeCompleto:'', email:'', senha:'' })
-  const [showPwd, setShowPwd] = useState(false)
+
+  // modal criar
+  const [openNew, setOpenNew]   = useState(false)
+  const [formNew, setFormNew]   = useState({ nomeCompleto:'', email:'', senha:'' })
+  const [showPwdNew, setShowPwdNew] = useState(false)
+
+  // modal editar
+  const [editTarget, setEditTarget] = useState(null) // perfil sendo editado
+  const [formEdit, setFormEdit]     = useState({ nomeCompleto:'', senha:'' })
+  const [showPwdEdit, setShowPwdEdit] = useState(false)
+
   const [status, setStatus] = useState(null) // { type:'ok'|'error'|'warn', text }
   const [saving, setSaving] = useState(false)
 
-  const openNew = () => { setForm({ nomeCompleto:'', email:'', senha:'' }); setStatus(null); setShowPwd(false); setOpen(true) }
+  const handleOpenNew = () => { setFormNew({ nomeCompleto:'', email:'', senha:'' }); setStatus(null); setShowPwdNew(false); setOpenNew(true) }
 
-  const handleSubmit = async (e) => {
+  const handleOpenEdit = (p) => {
+    setEditTarget(p)
+    setFormEdit({ nomeCompleto: p.nomeCompleto, senha:'' })
+    setShowPwdEdit(false)
+    setStatus(null)
+  }
+
+  // ── Criar usuário ─────────────────────────────────────────────────────────
+  const handleCreate = async (e) => {
     e.preventDefault()
     setSaving(true)
     setStatus(null)
 
     const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.senha,
-      options: { data: { nomeCompleto: form.nomeCompleto } },
+      email: formNew.email,
+      password: formNew.senha,
+      options: { data: { nomeCompleto: formNew.nomeCompleto } },
     })
 
     if (error) {
@@ -522,88 +538,145 @@ function Usuarios() {
       return
     }
 
-    // Salva perfil local para exibição na lista
-    const novoPerfil = { id: data.user.id, email: form.email, nomeCompleto: form.nomeCompleto }
+    const novoPerfil = { id: data.user.id, email: formNew.email, nomeCompleto: formNew.nomeCompleto }
     await writeLocal('ts_perfis', [...readLocal('ts_perfis', []), novoPerfil])
 
     if (data.session) {
-      // Confirmação de e-mail desativada no Supabase — novo usuário já entrou na sessão
-      // Desconecta para que o admin faça login novamente
       setStatus({ type:'warn', text:`Usuário criado. Como a confirmação por e-mail está desativada, você será desconectado — faça login novamente.` })
       setTimeout(() => supabase.auth.signOut(), 3000)
     } else {
-      setStatus({ type:'ok', text:`Convite enviado para ${form.email}. O usuário deverá confirmar o e-mail para acessar.` })
-      setOpen(false)
+      setStatus({ type:'ok', text:`Convite enviado para ${formNew.email}. O usuário deverá confirmar o e-mail para acessar.` })
+      setOpenNew(false)
     }
     setSaving(false)
   }
 
+  // ── Editar usuário (nome e/ou senha) via Edge Function ────────────────────
+  const handleEdit = async (e) => {
+    e.preventDefault()
+    if (!formEdit.nomeCompleto.trim() && !formEdit.senha) return
+    setSaving(true)
+    setStatus(null)
+
+    const body = { userId: editTarget.id }
+    if (formEdit.nomeCompleto.trim()) body.nomeCompleto = formEdit.nomeCompleto.trim()
+    if (formEdit.senha)               body.password     = formEdit.senha
+
+    const { data, error } = await supabase.functions.invoke('admin-update-user', { body })
+
+    if (error || data?.error) {
+      setStatus({ type:'error', text: error?.message || data?.error })
+      setSaving(false)
+      return
+    }
+
+    // atualiza kv_store local se nome mudou
+    if (formEdit.nomeCompleto.trim()) {
+      const lista = readLocal('ts_perfis', []).map(p =>
+        p.id === editTarget.id ? { ...p, nomeCompleto: formEdit.nomeCompleto.trim() } : p
+      )
+      await writeLocal('ts_perfis', lista)
+    }
+
+    setEditTarget(null)
+    setStatus({ type:'ok', text: 'Usuário atualizado com sucesso.' })
+    setSaving(false)
+  }
+
+  const StatusBox = ({ s }) => s ? (
+    <div style={{ padding:'8px 10px', marginBottom:'10px', borderRadius:'2px', fontSize:'11px',
+      background: s.type==='error' ? '#FDECEA' : s.type==='warn' ? '#FFF3CD' : '#E8F5E9',
+      border: `1px solid ${s.type==='error' ? '#E8A09A' : s.type==='warn' ? '#FFCA28' : '#A5D6A7'}`,
+      color: s.type==='error' ? '#C62828' : s.type==='warn' ? '#5F4000' : '#1B5E20' }}>
+      {s.text}
+    </div>
+  ) : null
+
   return (
     <>
-      <Toolbar title="Usuários do Sistema" breadcrumb="Usuários" onAdd={openNew} />
+      <Toolbar title="Usuários do Sistema" breadcrumb="Usuários" onAdd={handleOpenNew} />
 
-      {status && !open && (
-        <div style={{ padding:'10px 14px', marginBottom:'12px', borderRadius:'2px', fontSize:'12px',
-          background: status.type==='error' ? '#FDECEA' : status.type==='warn' ? '#FFF3CD' : '#E8F5E9',
-          border: `1px solid ${status.type==='error' ? '#E8A09A' : status.type==='warn' ? '#FFCA28' : '#A5D6A7'}`,
-          color: status.type==='error' ? '#C62828' : status.type==='warn' ? '#5F4000' : '#1B5E20' }}>
-          {status.text}
-        </div>
-      )}
-
-      <div style={{ marginBottom:'12px', padding:'10px 14px', background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px', fontSize:'11px', color:'#0050A0' }}>
-        Para <strong>remover ou redefinir a senha</strong> de um usuário, acesse o painel do Supabase em Authentication → Users.
-      </div>
+      {status && !openNew && !editTarget && <StatusBox s={status} />}
 
       <div className="erp-panel">
         <table className="erp-table">
           <thead><tr>
-            <th>Nome</th><th>E-mail</th>
+            <th>Nome</th><th>E-mail</th><th style={{ width:60 }}></th>
           </tr></thead>
           <tbody>
-            {perfis.length === 0 && <tr className="empty"><td colSpan={2}>Nenhum usuário registrado aqui ainda</td></tr>}
+            {perfis.length === 0 && <tr className="empty"><td colSpan={3}>Nenhum usuário registrado aqui ainda</td></tr>}
             {perfis.map(p => (
               <tr key={p.id}>
                 <td style={{ fontWeight:500 }}>{p.nomeCompleto}</td>
                 <td className="muted">{p.email}</td>
+                <td>
+                  <button onClick={() => handleOpenEdit(p)} className="erp-btn erp-btn-secondary"
+                    style={{ padding:'3px 10px', fontSize:'11px' }}>Editar</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {open && (
-        <Modal title="Novo Usuário" onClose={() => setOpen(false)}>
-          <form onSubmit={handleSubmit}>
+      {/* Modal Criar */}
+      {openNew && (
+        <Modal title="Novo Usuário" onClose={() => setOpenNew(false)}>
+          <form onSubmit={handleCreate}>
             <FField label="Nome Completo *">
-              <input value={form.nomeCompleto} onChange={e => setForm(f => ({ ...f, nomeCompleto:e.target.value }))} required className="erp-input" />
+              <input value={formNew.nomeCompleto} onChange={e => setFormNew(f => ({ ...f, nomeCompleto:e.target.value }))} required className="erp-input" />
             </FField>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               <FField label="E-mail *">
-                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email:e.target.value }))} required className="erp-input" />
+                <input type="email" value={formNew.email} onChange={e => setFormNew(f => ({ ...f, email:e.target.value }))} required className="erp-input" />
               </FField>
               <FField label="Senha Temporária *">
                 <div style={{ position:'relative' }}>
-                  <input type={showPwd ? 'text' : 'password'} value={form.senha} minLength={6}
-                    onChange={e => setForm(f => ({ ...f, senha:e.target.value }))} required className="erp-input" style={{ paddingRight:'30px' }} />
-                  <button type="button" onClick={() => setShowPwd(v => !v)} style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'12px', color:'#54698D' }}>
-                    {showPwd ? '🙈' : '👁️'}
+                  <input type={showPwdNew ? 'text' : 'password'} value={formNew.senha} minLength={6}
+                    onChange={e => setFormNew(f => ({ ...f, senha:e.target.value }))} required className="erp-input" style={{ paddingRight:'30px' }} />
+                  <button type="button" onClick={() => setShowPwdNew(v => !v)}
+                    style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'12px', color:'#54698D' }}>
+                    {showPwdNew ? '🙈' : '👁️'}
                   </button>
                 </div>
               </FField>
             </div>
-            {status && (
-              <div style={{ padding:'8px 10px', marginBottom:'10px', borderRadius:'2px', fontSize:'11px',
-                background: status.type==='error' ? '#FDECEA' : '#FFF3CD',
-                border: `1px solid ${status.type==='error' ? '#E8A09A' : '#FFCA28'}`,
-                color: status.type==='error' ? '#C62828' : '#5F4000' }}>
-                {status.text}
-              </div>
-            )}
+            <StatusBox s={status} />
             <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
-              <button type="button" onClick={() => setOpen(false)} className="erp-btn erp-btn-secondary">Cancelar</button>
+              <button type="button" onClick={() => setOpenNew(false)} className="erp-btn erp-btn-secondary">Cancelar</button>
               <button type="submit" disabled={saving} className="erp-btn erp-btn-primary">
                 {saving ? 'Criando...' : 'Criar Usuário'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Editar */}
+      {editTarget && (
+        <Modal title={`Editar — ${editTarget.email}`} onClose={() => setEditTarget(null)}>
+          <form onSubmit={handleEdit}>
+            <FField label="Nome Completo">
+              <input value={formEdit.nomeCompleto} onChange={e => setFormEdit(f => ({ ...f, nomeCompleto:e.target.value }))}
+                className="erp-input" />
+            </FField>
+            <FField label="Nova Senha (deixe em branco para não alterar)">
+              <div style={{ position:'relative' }}>
+                <input type={showPwdEdit ? 'text' : 'password'} value={formEdit.senha} minLength={6}
+                  onChange={e => setFormEdit(f => ({ ...f, senha:e.target.value }))}
+                  className="erp-input" style={{ paddingRight:'30px' }} placeholder="mínimo 6 caracteres" />
+                <button type="button" onClick={() => setShowPwdEdit(v => !v)}
+                  style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'12px', color:'#54698D' }}>
+                  {showPwdEdit ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </FField>
+            <StatusBox s={status} />
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
+              <button type="button" onClick={() => setEditTarget(null)} className="erp-btn erp-btn-secondary">Cancelar</button>
+              <button type="submit" disabled={saving || (!formEdit.nomeCompleto.trim() && !formEdit.senha)}
+                className="erp-btn erp-btn-primary">
+                {saving ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </form>
