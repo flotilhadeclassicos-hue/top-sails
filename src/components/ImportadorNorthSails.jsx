@@ -24,8 +24,14 @@ function extractRef(desc) {
 }
 
 // ── PDF Extraction ────────────────────────────────────────────────────────────
+//
+// O Relatório de Comissões usa colunas de largura fixa. Em vez de "achatar" o
+// PDF em texto (que perde a posição), preservamos a coordenada X de cada
+// fragmento. Isso é essencial porque a descrição quebra em várias linhas
+// enquanto a data e os valores ficam centralizados numa única linha do meio —
+// reconstruir o registro exige saber a posição de cada pedaço.
 
-async function extractTextFromPDF(file) {
+async function extractFromPDF(file) {
   const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -35,37 +41,98 @@ async function extractTextFromPDF(file) {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise
 
-  let fullText = ''
+  const pages = []   // [[{ y, cells: [{ x, text }] }, ...], ...]  uma lista por página, topo→base
+  let text = ''
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum)
     const content = await page.getTextContent()
 
-    // Group items by y-coordinate (bucket to 4pt grid = same line)
+    // Agrupa itens por coordenada Y (bucket de 4pt = mesma linha visual)
     const lineMap = new Map()
     for (const item of content.items) {
       if (!item.str?.trim()) continue
       const y = Math.round(item.transform[5] / 4) * 4
       if (!lineMap.has(y)) lineMap.set(y, [])
-      lineMap.get(y).push({ x: item.transform[4], text: item.str })
+      lineMap.get(y).push({ x: Math.round(item.transform[4]), text: item.str })
     }
 
-    // Sort top→bottom (higher y = higher on page in PDF space)
+    // Ordena topo→base (maior y = mais acima na página, em coordenadas PDF)
     const sortedYs = [...lineMap.keys()].sort((a, b) => b - a)
+    const pageLines = []
     for (const y of sortedYs) {
-      const items = lineMap.get(y).sort((a, b) => a.x - b.x)
-      const lineText = items.map(i => i.text).join(' ').replace(/\s+/g, ' ').trim()
-      if (lineText) fullText += lineText + '\n'
+      const cells = lineMap.get(y).sort((a, b) => a.x - b.x)
+      pageLines.push({ y, cells })
+      text += cells.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim() + '\n'
     }
+    pages.push(pageLines)
   }
 
-  return fullText
+  return { pages, text }
 }
 
 // ── Parser ────────────────────────────────────────────────────────────────────
 
-function parseExtrato(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+// Limites de coluna (em pt) — o template North Sails é de largura fixa:
+//   data x≈34 | descrição x≈109 | valores x≈347+ | situação (pendentes) x≈506
+const DATE_RE  = /^\d{2}\/\d{2}\/\d{4}$/
+const NUM_RE   = /^[\d.]+,\d{2}$/
+const DESC_MIN = 100   // descrição começa em x≈109
+const DESC_MAX = 340   // colunas numéricas começam em x≈347+
+const SIT_MIN  = 490   // coluna "Situação" (pendentes) em x≈506
 
+// Reconstrói os registros de uma seção. A data e os 3 valores estão sempre na
+// mesma linha (a "âncora"); cada fragmento de descrição/situação é atribuído à
+// âncora mais próxima verticalmente, juntando os pedaços quebrados em várias
+// linhas. Agrupado por página para não comparar Y de páginas diferentes.
+function buildRecords(lines) {
+  const byPage = new Map()
+  for (const l of lines) {
+    if (!byPage.has(l.page)) byPage.set(l.page, [])
+    byPage.get(l.page).push(l)
+  }
+
+  const records = []
+  for (const [, pageLines] of byPage) {
+    const anchors = []        // { y, date }
+    const cells = []          // { y, x, text } — todos os fragmentos não-data
+    for (const l of pageLines) {
+      for (const c of l.cells) {
+        if (c.x < DESC_MIN && DATE_RE.test(c.text)) anchors.push({ y: l.y, date: c.text })
+        else cells.push({ y: l.y, x: c.x, text: c.text })
+      }
+    }
+    if (!anchors.length) continue
+    anchors.sort((a, b) => b.y - a.y)   // topo→base
+
+    const nearest = (y) =>
+      anchors.reduce((best, a) => (Math.abs(a.y - y) < Math.abs(best.y - y) ? a : best), anchors[0])
+
+    const acc = new Map(anchors.map(a => [a, { desc: [], nums: [], sit: [] }]))
+    for (const c of cells) {
+      const g = acc.get(nearest(c.y))
+      if (NUM_RE.test(c.text) && c.x >= DESC_MAX) g.nums.push(c)
+      else if (c.x >= SIT_MIN)                    g.sit.push(c)
+      else if (c.x >= DESC_MIN && c.x < DESC_MAX) g.desc.push(c)
+    }
+
+    const join = (arr) => arr
+      .sort((p, q) => q.y - p.y || p.x - q.x)   // topo→base, esquerda→direita
+      .map(c => c.text).join(' ').replace(/\s+/g, ' ').trim()
+
+    for (const a of anchors) {
+      const g = acc.get(a)
+      records.push({
+        date: a.date,
+        descricao: join(g.desc),
+        nums: g.nums.sort((p, q) => p.x - q.x).map(c => c.text),  // parcela, base, comissão
+        situacao: join(g.sit),
+      })
+    }
+  }
+  return records
+}
+
+function parseExtrato(pages, text) {
   const headerMatch = text.match(/Relatório de Comissões\s*[-–]\s*(\d{2})\/(\d{4})/i)
   if (!headerMatch)
     throw new Error('Documento não reconhecido. Certifique-se de que é um Relatório de Comissões North Sails.')
@@ -74,85 +141,66 @@ function parseExtrato(text) {
   const ano = headerMatch[2]
   const importId = `northsails_${mes}_${ano}`
 
-  const saldoMatch = text.match(/Saldo antes de[^\n]+([\d.]+,\d{2})/)
+  const saldoMatch = text.match(/Saldo antes de[^\n]+?([\d.]+,\d{2})/)
   const saldoAnterior = saldoMatch ? parseBR(saldoMatch[1]) : 0
 
+  // Distribui as linhas nas seções, coletando apenas a região de dados — entre
+  // o cabeçalho de colunas ("Data ...") e a linha "Total de ..." — preservando
+  // a página de cada linha.
+  const buckets = { comissoes: [], debitos: [], pendentes: [] }
   let section = null
-  const comissoesMes   = []
-  const outrosDebitos  = []
-  const pendentes      = []
+  let inData = false
 
-  let pDate = null
-  let pDesc = ''
+  for (let p = 0; p < pages.length; p++) {
+    for (const line of pages[p]) {
+      const joined = line.cells.map(c => c.text).join(' ')
 
-  const isSkip = l =>
-    /^(Data cr[eé]dito|Data op[eei]|Data vcto|Descrição|Total de|Saldo |Base c|Valor par|Situação|Comissões do mês|Outros débitos|Resumo|\(\+\)|\(-\)|\(=\))/i.test(l)
+      if (/Comissões ainda pendentes/i.test(joined)) { section = 'pendentes'; inData = false; continue }
+      if (/^\s*\(-\)\s*Outros débitos/i.test(joined)) { section = 'debitos';   inData = false; continue }
+      if (/^\s*Comissões do mês/i.test(joined))       { section = 'comissoes'; inData = false; continue }
+      if (/^\s*Resumo\s*$/i.test(joined))             { section = null;        inData = false; continue }
+      if (/^\s*Total de/i.test(joined))               { inData = false; continue }
+      if (!section) continue
 
-  const flush3 = (date, desc, n1, n2, n3, target) =>
-    target.push({ data: parseDateBR(date), descricao: desc.trim(), valorParcela: parseBR(n1), baseComissao: parseBR(n2), valorComissao: parseBR(n3), ref: extractRef(desc) })
+      // Cabeçalho de colunas ("Data crédito/operação/vcto"): liga a coleta a
+      // partir da PRÓXIMA linha e pula o próprio cabeçalho.
+      if (line.cells.some(c => c.x < DESC_MIN && /^Data\s/i.test(c.text))) { inData = true; continue }
+      if (!inData) continue
 
-  const flush1 = (date, desc, n1, target) =>
-    target.push({ data: parseDateBR(date), descricao: desc.trim(), valor: parseBR(n1) })
-
-  for (const line of lines) {
-    // Section markers
-    if (/^Comissões do mês/i.test(line))          { section = 'comissoes'; pDate = null; pDesc = ''; continue }
-    if (/^\(-\)\s*Outros débitos/i.test(line))    { section = 'debitos';   pDate = null; pDesc = ''; continue }
-    if (/^Resumo\s*$/i.test(line))                { section = null;        pDate = null; pDesc = ''; continue }
-    if (/^Comissões ainda pendentes/i.test(line)) { section = 'pendentes'; pDate = null; pDesc = ''; continue }
-    if (!section) continue
-    if (isSkip(line)) { pDate = null; pDesc = ''; continue }
-
-    const dateMatch = line.match(/^(\d{2}\/\d{2}\/\d{4})/)
-
-    // ── Comissões do mês ─────────────────────────────────────────────────────
-    if (section === 'comissoes') {
-      const full = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.*?)\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})\s*$/)
-      if (full) { pDate = null; pDesc = ''; flush3(full[1], full[2], full[3], full[4], full[5], comissoesMes); continue }
-      if (dateMatch) { pDate = dateMatch[1]; pDesc = line.slice(dateMatch[0].length).trim(); continue }
-      if (pDate) {
-        const nums = line.match(/^(.*?)\s*([\d.]+,\d{2})\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})\s*$/)
-        if (nums) { flush3(pDate, (pDesc + ' ' + nums[1]).replace(/\s+/g, ' '), nums[2], nums[3], nums[4], comissoesMes); pDate = null; pDesc = '' }
-        else pDesc += ' ' + line
-      }
-    }
-
-    // ── Outros débitos ────────────────────────────────────────────────────────
-    if (section === 'debitos') {
-      const full = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.*?)\s+([\d.]+,\d{2})\s*$/)
-      if (full) { pDate = null; pDesc = ''; flush1(full[1], full[2], full[3], outrosDebitos); continue }
-      if (dateMatch) { pDate = dateMatch[1]; pDesc = line.slice(dateMatch[0].length).trim(); continue }
-      if (pDate) {
-        const nums = line.match(/^(.*?)\s*([\d.]+,\d{2})\s*$/)
-        if (nums) { flush1(pDate, (pDesc + ' ' + nums[1]).replace(/\s+/g, ' '), nums[2], outrosDebitos); pDate = null; pDesc = '' }
-        else pDesc += ' ' + line
-      }
-    }
-
-    // ── Comissões pendentes ───────────────────────────────────────────────────
-    if (section === 'pendentes') {
-      const full = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.*?)\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})(?:\s+(Parcela\s+\S+(?:\s+\S+)*))?$/)
-      if (full) {
-        pDate = null; pDesc = ''
-        pendentes.push({ dataVcto: parseDateBR(full[1]), descricao: full[2].trim(), valorParcela: parseBR(full[3]), baseComissao: parseBR(full[4]), valorComissao: parseBR(full[5]), situacao: full[6]?.trim() || '', ref: extractRef(full[2]) })
-        continue
-      }
-      if (dateMatch) { pDate = dateMatch[1]; pDesc = line.slice(dateMatch[0].length).trim(); continue }
-      if (pDate) {
-        const nums = line.match(/^(.*?)\s*([\d.]+,\d{2})\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})(?:\s+(Parcela\s+\S+(?:\s+\S+)*))?$/)
-        if (nums) {
-          const desc = (pDesc + ' ' + nums[1]).replace(/\s+/g, ' ').trim()
-          pendentes.push({ dataVcto: parseDateBR(pDate), descricao: desc, valorParcela: parseBR(nums[2]), baseComissao: parseBR(nums[3]), valorComissao: parseBR(nums[4]), situacao: nums[5]?.trim() || '', ref: extractRef(desc) })
-          pDate = null; pDesc = ''
-        } else if (/^Parcela/i.test(line) && pendentes.length > 0) {
-          pendentes[pendentes.length - 1].situacao = line.trim()
-          pDate = null; pDesc = ''
-        } else {
-          pDesc += ' ' + line
-        }
-      }
+      buckets[section].push({ page: p, y: line.y, cells: line.cells })
     }
   }
+
+  const comissoesMes = buildRecords(buckets.comissoes)
+    .filter(r => r.nums.length >= 3)
+    .map(r => ({
+      data: parseDateBR(r.date),
+      descricao: r.descricao,
+      valorParcela: parseBR(r.nums[0]),
+      baseComissao: parseBR(r.nums[1]),
+      valorComissao: parseBR(r.nums[2]),
+      ref: extractRef(r.descricao),
+    }))
+
+  const outrosDebitos = buildRecords(buckets.debitos)
+    .filter(r => r.nums.length >= 1)
+    .map(r => ({
+      data: parseDateBR(r.date),
+      descricao: r.descricao,
+      valor: parseBR(r.nums[0]),
+    }))
+
+  const pendentes = buildRecords(buckets.pendentes)
+    .filter(r => r.nums.length >= 3)
+    .map(r => ({
+      dataVcto: parseDateBR(r.date),
+      descricao: r.descricao,
+      valorParcela: parseBR(r.nums[0]),
+      baseComissao: parseBR(r.nums[1]),
+      valorComissao: parseBR(r.nums[2]),
+      situacao: r.situacao,
+      ref: extractRef(r.descricao),
+    }))
 
   return { refMes: `${mes}/${ano}`, mes, ano, importId, saldoAnterior, comissoesMes, outrosDebitos, pendentes }
 }
@@ -176,8 +224,8 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
     if (!file) return
     setLoading(true); setError('')
     try {
-      const text   = await extractTextFromPDF(file)
-      const result = parseExtrato(text)
+      const { pages, text } = await extractFromPDF(file)
+      const result = parseExtrato(pages, text)
 
       const alreadyImported = readLocal('ts_contasReceber', []).some(c => c.importId === result.importId)
       if (alreadyImported) {
