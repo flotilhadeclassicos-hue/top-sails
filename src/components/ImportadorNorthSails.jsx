@@ -222,6 +222,11 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
       || ''
   })
 
+  // Registro de extratos já importados (para listagem + estorno)
+  const [imports, setImports]             = useState(() => readLocal('ts_northSailsImports', []))
+  const [pendingEstorno, setPendingEstorno] = useState(null)   // importId aguardando confirmação
+  const [estornando, setEstornando]       = useState(false)
+
   const handleFileChange = (e) => {
     const f = e.target.files[0]
     if (!f) return
@@ -235,7 +240,7 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
       const { pages, text } = await extractFromPDF(file)
       const result = parseExtrato(pages, text)
 
-      const alreadyImported = readLocal('ts_contasReceber', []).some(c => c.importId === result.importId)
+      const alreadyImported = readLocal('ts_northSailsImports', []).some(i => i.importId === result.importId)
       if (alreadyImported) {
         setError(`Extrato ${result.refMes} já foi importado anteriormente.`)
         setLoading(false); return
@@ -281,6 +286,11 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
 
       const { importId, comissoesMes, outrosDebitos, pendentes } = parsed
 
+      // Rastreia tudo que esta importação cria/altera, para permitir o estorno
+      const createdContaIds   = []   // contas a receber criadas neste import
+      const confirmedContaIds = []   // contas pré-existentes (pendentes) confirmadas aqui
+      const offBookIds        = []   // lançamentos off book criados neste import
+
       // ── Comissões do mês: CR confirmado + partida cruzada ──────────────────
       for (const row of comissoesMes) {
         const existing = row.ref
@@ -296,14 +306,17 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
           { id: dbId, descricao: `Repasse — ${northSailsParte.nome}`, categoriaId: catParteRel, parteId: null, valor: row.valorComissao, tipo: 'despesa', data: row.data, baixaCruzadaId, contaId },
           { id: gcId, descricao: row.descricao, categoriaId: catParteRel, parteId: northSailsParte.id,   valor: row.valorComissao, tipo: 'receita', data: row.data, baixaCruzadaId, contaId }
         )
+        offBookIds.push(crId, dbId, gcId)
 
         if (existing) {
+          confirmedContaIds.push(existing.id)
           contasReceber = contasReceber.map(c =>
             c.id === existing.id
               ? { ...c, status: 'confirmado', formaPagamento: 'cruzado', lancIds: [crId, dbId, gcId] }
               : c
           )
         } else {
+          createdContaIds.push(contaId)
           contasReceber.push({
             id: contaId,
             status: 'confirmado',
@@ -323,8 +336,9 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
 
       // ── Outros débitos: despesa na Gestão de Contas (North Sails) ──────────
       for (const row of outrosDebitos) {
+        const obId = uuid()
         offBook.push({
-          id: uuid(),
+          id: obId,
           descricao: row.descricao,
           categoriaId: catParteRel,
           parteId: northSailsParte.id,
@@ -335,13 +349,16 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
           contaId: null,
           importId,
         })
+        offBookIds.push(obId)
       }
 
       // ── Pendentes: CR aberto com vencimento ────────────────────────────────
       for (const row of pendentes) {
         if (row.ref && contasReceber.some(c => c.northSailsRef === row.ref && c.status === 'aberto')) continue
+        const pId = uuid()
+        createdContaIds.push(pId)
         contasReceber.push({
-          id: uuid(),
+          id: pId,
           status: 'aberto',
           ordemId: null,
           lancIds: [],
@@ -356,8 +373,27 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
         })
       }
 
+      const novoImport = {
+        importId,
+        refMes: parsed.refMes,
+        mes: parsed.mes,
+        ano: parsed.ano,
+        importedAt: new Date().toISOString(),
+        counts: { comissoes: comissoesMes.length, debitos: outrosDebitos.length, pendentes: pendentes.length },
+        totals: {
+          comissoes: comissoesMes.reduce((s, r) => s + r.valorComissao, 0),
+          debitos:   outrosDebitos.reduce((s, r) => s + r.valor, 0),
+          pendentes: pendentes.reduce((s, r) => s + r.valorComissao, 0),
+        },
+        createdContaIds,
+        confirmedContaIds,
+        offBookIds,
+      }
+      const imports = [...readLocal('ts_northSailsImports', []), novoImport]
+
       await writeLocal('ts_contasReceber', contasReceber)
       await writeLocal('ts_offBook', offBook)
+      await writeLocal('ts_northSailsImports', imports)
 
       onDone?.()
       onClose()
@@ -365,6 +401,36 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
       setError(e.message || 'Erro ao salvar os dados.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Estorna toda a cadeia de uma importação: remove os lançamentos off book
+  // criados, exclui as contas a receber criadas e reverte para "aberto" as
+  // contas pendentes que haviam sido confirmadas por este import.
+  const handleEstornar = async (rec) => {
+    setEstornando(true); setError('')
+    try {
+      const offBook = readLocal('ts_offBook', []).filter(l => !rec.offBookIds.includes(l.id))
+
+      const contas = readLocal('ts_contasReceber', [])
+        .filter(c => !rec.createdContaIds.includes(c.id))
+        .map(c => rec.confirmedContaIds.includes(c.id)
+          ? { ...c, status: 'aberto', formaPagamento: null, lancIds: [] }
+          : c)
+
+      const restantes = readLocal('ts_northSailsImports', []).filter(i => i.importId !== rec.importId)
+
+      await writeLocal('ts_offBook', offBook)
+      await writeLocal('ts_contasReceber', contas)
+      await writeLocal('ts_northSailsImports', restantes)
+
+      setImports(restantes)
+      setPendingEstorno(null)
+      onDone?.()
+    } catch (e) {
+      setError(e.message || 'Erro ao estornar a importação.')
+    } finally {
+      setEstornando(false)
     }
   }
 
@@ -393,6 +459,55 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
               {loading ? 'Analisando...' : 'Analisar PDF'}
             </button>
           </div>
+
+          {/* ── Extratos já importados + estorno ──────────────────────────── */}
+          {imports.length > 0 && (
+            <div style={{ marginTop: '20px', borderTop: '1px solid #E4E7EA', paddingTop: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#54698D', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Extratos importados ({imports.length})
+              </div>
+              <table className="erp-table" style={{ fontSize: '11px' }}>
+                <thead><tr>
+                  <th>Ref</th><th>Importado em</th>
+                  <th className="right">Comissões</th>
+                  <th className="right">Débitos</th>
+                  <th className="right">Pendentes</th>
+                  <th style={{ width: '120px' }}>Ações</th>
+                </tr></thead>
+                <tbody>
+                  {[...imports].sort((a, b) => (b.importedAt || '').localeCompare(a.importedAt || '')).map(rec => (
+                    <tr key={rec.importId}>
+                      <td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{rec.refMes}</td>
+                      <td className="muted" style={{ whiteSpace: 'nowrap' }}>
+                        {rec.importedAt ? new Date(rec.importedAt).toLocaleDateString('pt-BR') : '—'}
+                      </td>
+                      <td className="right credit">{rec.counts?.comissoes ?? 0} · {formatCurrency(rec.totals?.comissoes || 0)}</td>
+                      <td className="right debit">{rec.counts?.debitos ?? 0} · {formatCurrency(rec.totals?.debitos || 0)}</td>
+                      <td className="right">{rec.counts?.pendentes ?? 0} · {formatCurrency(rec.totals?.pendentes || 0)}</td>
+                      <td>
+                        {pendingEstorno === rec.importId ? (
+                          <span style={{ display: 'flex', gap: '6px', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                            <span style={{ color: '#54698D' }}>Estornar?</span>
+                            <button onClick={() => handleEstornar(rec)} disabled={estornando} className="erp-btn erp-btn-link-danger erp-btn-sm">
+                              {estornando ? '...' : 'Sim'}
+                            </button>
+                            <button onClick={() => setPendingEstorno(null)} disabled={estornando} className="erp-btn erp-btn-link erp-btn-sm">Não</button>
+                          </span>
+                        ) : (
+                          <button onClick={() => { setPendingEstorno(rec.importId); setError('') }} className="erp-btn erp-btn-link-danger erp-btn-sm">
+                            Estornar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ fontSize: '10px', color: '#8A94A6', marginTop: '6px' }}>
+                O estorno remove os lançamentos do Off Book, exclui as contas a receber criadas e reabre as parcelas pendentes que haviam sido confirmadas.
+              </div>
+            </div>
+          )}
         </>
       )}
 

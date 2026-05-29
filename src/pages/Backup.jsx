@@ -7,6 +7,7 @@ const KEYS = [
   'ts_produtos', 'ts_categorias', 'ts_ordens', 'ts_pedidos',
   'ts_contasReceber', 'ts_contasPagar', 'ts_financeiro', 'ts_caixinha',
   'ts_offBook', 'ts_template_pedido', 'ts_rel_config_v3',
+  'ts_northSailsImports',
 ]
 
 const VERSAO_BACKUP = '1.0'
