@@ -298,7 +298,7 @@ function ContasReceberModal({ ordem, pedido, onClose }) {
 
     const novas = rows.map(r => ({
       id:             uuid(),
-      descricao:      `${ordem.numero} — ${r.label}${pedido ? ' / ' + pedido.numero : ''}`,
+      descricao:      `${ordem.numero} — ${r.label}${cli ? ' / ' + cli.nome : ''}`,
       categoriaId,
       valor:          parseFloat(r.valor.toFixed(2)),
       vencimento:     r.venc,
