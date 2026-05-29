@@ -199,6 +199,11 @@ export default function ContasReceber() {
   const pedidos    = readLocal('ts_pedidos',    [])
 
   const clienteDaConta = (conta) => {
+    // Cliente gravado direto na conta (ex.: importação North Sails)
+    if (conta.clienteId) {
+      const direto = clientes.find(c => c.id === conta.clienteId)
+      if (direto) return direto
+    }
     const ordemId  = conta.ordemId  || ordens.find(o => o.contaReceberId === conta.id)?.id
     const pedidoId = conta.pedidoId
     const clienteId = ordens.find(o => o.id === ordemId)?.clienteId
@@ -291,7 +296,9 @@ export default function ContasReceber() {
                   <td>
                     {clienteObj
                       ? <LinkBtn onClick={() => setClienteModal(clienteObj)}>{clienteObj.nome}</LinkBtn>
-                      : <span className="muted">—</span>}
+                      : conta.clienteNome
+                        ? <span>{conta.clienteNome}</span>
+                        : <span className="muted">—</span>}
                   </td>
                   <td className="muted">{cat?.nome||'—'}</td>
                   <td style={{ color: atrasada ? '#C62828' : undefined, fontWeight: atrasada ? 600 : undefined }}>

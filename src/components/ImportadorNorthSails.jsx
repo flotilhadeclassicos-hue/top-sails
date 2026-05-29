@@ -23,6 +23,19 @@ function extractRef(desc) {
   return m ? `${m[1]}_${m[2]}_${m[3]}` : null
 }
 
+// Nome do cliente = tudo antes do primeiro hífen na descrição
+// ex.: "EDUARDO BASTOS - Pedido 1348 - OC nº OBR1817 (1/2)" → "EDUARDO BASTOS"
+function extractClienteNome(desc) {
+  const m = String(desc || '').match(/^(.*?)\s+[-–—]\s+/)
+  return m ? m[1].trim() : ''
+}
+
+// Normaliza para comparar nomes (sem acento, minúsculo, espaços colapsados)
+const COMBINING = new RegExp('[\\u0300-\\u036f]', 'g')
+function normNome(s) {
+  return String(s || '').normalize('NFD').replace(COMBINING, '').toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
 // ── PDF Extraction ────────────────────────────────────────────────────────────
 //
 // O Relatório de Comissões usa colunas de largura fixa. Em vez de "achatar" o
@@ -261,6 +274,13 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
     try {
       const allCats = readLocal('ts_categorias', [])
       const partes  = readLocal('ts_partes', [])
+      const clientes = readLocal('ts_clientes', [])
+
+      // Casa o nome extraído da descrição com um cliente cadastrado (se existir)
+      const matchClienteId = (nome) => {
+        const n = normNome(nome)
+        return n ? (clientes.find(c => normNome(c.nome) === n)?.id || null) : null
+      }
 
       const northSailsParte = partes.find(p => /north.?sails/i.test(p.nome))
       if (!northSailsParte) {
@@ -317,6 +337,7 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
           )
         } else {
           createdContaIds.push(contaId)
+          const clienteNome = extractClienteNome(row.descricao)
           contasReceber.push({
             id: contaId,
             status: 'confirmado',
@@ -329,6 +350,8 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
             valor: row.valorComissao,
             vencimento: row.data,
             northSailsRef: row.ref,
+            clienteId: matchClienteId(clienteNome),
+            clienteNome,
             importId,
           })
         }
@@ -357,6 +380,7 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
         if (row.ref && contasReceber.some(c => c.northSailsRef === row.ref && c.status === 'aberto')) continue
         const pId = uuid()
         createdContaIds.push(pId)
+        const clienteNome = extractClienteNome(row.descricao)
         contasReceber.push({
           id: pId,
           status: 'aberto',
@@ -369,6 +393,8 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
           valor: row.valorComissao,
           vencimento: row.dataVcto,
           northSailsRef: row.ref,
+          clienteId: matchClienteId(clienteNome),
+          clienteNome,
           importId,
         })
       }
