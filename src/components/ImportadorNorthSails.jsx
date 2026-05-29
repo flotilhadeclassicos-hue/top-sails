@@ -214,6 +214,14 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
   const [saving, setSaving]  = useState(false)
   const [error, setError]    = useState('')
 
+  // Categoria das comissões do mês — pré-definida com a categoria "Comissões"
+  const [comissaoCatId, setComissaoCatId] = useState(() => {
+    const cats = readLocal('ts_categorias', [])
+    return cats.find(c => c.nome?.trim().toLowerCase() === 'comissões')?.id
+      || cats.find(c => /comiss/i.test(c.nome) && c.tipo !== 'despesa')?.id
+      || ''
+  })
+
   const handleFileChange = (e) => {
     const f = e.target.files[0]
     if (!f) return
@@ -261,12 +269,11 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
         setSaving(false); return
       }
 
-      // Encontra ou cria categoria de comissão
-      let catComissao = allCats.find(c => /comiss/i.test(c.nome))?.id
+      // Categoria das comissões escolhida no preview (default: "Comissões")
+      const catComissao = comissaoCatId
       if (!catComissao) {
-        const newCat = { id: uuid(), nome: 'Comissão North Sails', tipo: 'receita' }
-        await writeLocal('ts_categorias', [...allCats, newCat])
-        catComissao = newCat.id
+        setError('Selecione a categoria das comissões.')
+        setSaving(false); return
       }
 
       let contasReceber = readLocal('ts_contasReceber', [])
@@ -361,6 +368,7 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
     }
   }
 
+  const receitaCats    = readLocal('ts_categorias', []).filter(c => c.tipo !== 'despesa')
   const totalComissoes = parsed?.comissoesMes.reduce((s, r) => s + r.valorComissao, 0) || 0
   const totalDebitos   = parsed?.outrosDebitos.reduce((s, r) => s + r.valor, 0) || 0
   const totalPendentes = parsed?.pendentes.reduce((s, r) => s + r.valorComissao, 0) || 0
@@ -412,6 +420,12 @@ export default function ImportadorNorthSails({ onClose, onDone }) {
             <div style={{ marginBottom: '14px' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#2E7D32', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Comissões do mês → C. Receber (confirmado) + Gestão de Contas North Sails
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <label className="erp-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Categoria das comissões:</label>
+                <select value={comissaoCatId} onChange={e => setComissaoCatId(e.target.value)} className="erp-select" style={{ maxWidth: '280px', fontSize: '11px' }}>
+                  {receitaCats.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
               </div>
               <table className="erp-table" style={{ fontSize: '11px' }}>
                 <thead><tr><th>Data crédito</th><th>Descrição</th><th className="right">Comissão</th></tr></thead>
