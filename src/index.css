@@ -121,6 +121,9 @@ body {
 .erp-icon-btn.os     { width:auto; padding:0 6px; font-size:11px; font-weight:700; }
 .erp-icon-status     { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; }
 .erp-icon-status.green { color:#2E7D32; }
+
+/* Texto de célula em uma linha só, com reticências ao estourar a largura */
+.ellipsis-cell { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
 .erp-btn-xs { padding: 2px 6px; font-size: 11px; }
 .erp-btn-link { background:transparent; color:#0070D2; border-color:transparent; padding:0; font-weight:400; }
 .erp-btn-link:hover { text-decoration:underline; }

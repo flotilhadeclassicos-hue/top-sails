@@ -294,11 +294,11 @@ export default function ContasReceber() {
               return (
                 <tr key={conta.id} style={atrasada ? { background:'#FFF5F5' } : undefined}>
                   <td>{conta.descricao}</td>
-                  <td>
+                  <td style={{ maxWidth:'260px' }}>
                     {clienteObj
-                      ? <LinkBtn onClick={() => setClienteModal(clienteObj)}>{clienteObj.nome}</LinkBtn>
+                      ? <LinkBtn className="ellipsis-cell" style={{ maxWidth:'248px' }} title={clienteObj.nome} onClick={() => setClienteModal(clienteObj)}>{clienteObj.nome}</LinkBtn>
                       : conta.clienteNome
-                        ? <span>{conta.clienteNome}</span>
+                        ? <span className="ellipsis-cell" style={{ maxWidth:'248px' }} title={conta.clienteNome}>{conta.clienteNome}</span>
                         : <span className="muted">—</span>}
                   </td>
                   <td className="muted">{cat?.nome||'—'}</td>

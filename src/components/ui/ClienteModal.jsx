@@ -12,11 +12,13 @@ function Row({ label, value }) {
   )
 }
 
-function LinkBtn({ children, onClick }) {
+function LinkBtn({ children, onClick, className, title, style }) {
   return (
     <button
       onClick={onClick}
-      style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:'#0070D2', fontWeight:500, fontSize:'inherit', fontFamily:'inherit', textDecoration:'underline', textDecorationStyle:'dotted', textUnderlineOffset:'2px' }}
+      className={className}
+      title={title}
+      style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:'#0070D2', fontWeight:500, fontSize:'inherit', fontFamily:'inherit', textDecoration:'underline', textDecorationStyle:'dotted', textUnderlineOffset:'2px', ...style }}
     >
       {children}
     </button>
