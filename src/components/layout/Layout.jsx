@@ -7,7 +7,7 @@ export default function Layout({ children, currentPage, onNavigate, onLogout, us
   const navigate = (page) => { onNavigate(page); setOpen(false) }
 
   return (
-    <div style={{ display:'flex', width:'100%', minHeight:'100vh' }}>
+    <div style={{ display:'flex', width:'100%', height:'100vh', overflow:'hidden' }}>
 
       {/* Barra superior — só aparece no mobile via CSS */}
       <header className="ts-topbar">
