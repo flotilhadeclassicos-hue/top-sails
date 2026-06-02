@@ -430,6 +430,8 @@ export default function ContasPagar() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [statusFilter, setStatusFilter] = useState('aberto')
   const [monthFilter,  setMonthFilter]  = useState('')
+  const [busca, setBusca] = useState('')
+  const [sort, setSort]   = useState({ key:'vencimento', dir:'asc' })
 
   const fornecedores = readLocal('ts_fornecedores', [])
   const categorias   = readLocal('ts_categorias', [])
@@ -442,6 +444,38 @@ export default function ContasPagar() {
   const filtered = baseContas.filter(c => !statusFilter || c.status === statusFilter)
   const aPagar = baseContas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
   const pago   = baseContas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
+
+  // Nome do fornecedor / categoria (para busca e ordenação)
+  const nomeForn = (c) => fornecedores.find(f => f.id === c.fornecedorId)?.nome || ''
+  const nomeCat  = (c) => categorias.find(x => x.id === c.categoriaId)?.nome || ''
+
+  const buscaNorm = busca.trim().toLowerCase()
+  const buscadas = buscaNorm
+    ? filtered.filter(c => nomeForn(c).toLowerCase().includes(buscaNorm) || (c.descricao || '').toLowerCase().includes(buscaNorm))
+    : filtered
+
+  const sortVal = (c, key) => {
+    switch (key) {
+      case 'fornecedor': return nomeForn(c).toLowerCase()
+      case 'descricao':  return (c.descricao || '').toLowerCase()
+      case 'categoria':  return nomeCat(c).toLowerCase()
+      case 'vencimento': return c.vencimento || ''
+      case 'pagamento':  return c.formaPagamento || ''
+      case 'valor':      return c.valor || 0
+      case 'status':     return c.status || ''
+      default:           return ''
+    }
+  }
+  const ordenadas = [...buscadas].sort((a, b) => {
+    const va = sortVal(a, sort.key), vb = sortVal(b, sort.key)
+    const cmp = (typeof va === 'number' && typeof vb === 'number')
+      ? va - vb
+      : String(va).localeCompare(String(vb), 'pt-BR')
+    return sort.dir === 'asc' ? cmp : -cmp
+  })
+
+  const toggleSort = (k) => setSort(s => s.key === k ? { key:k, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key:k, dir:'asc' })
+  const ind = (k) => sort.key === k ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
 
   const handleEstorno = async (conta) => {
     const ids = conta.lancIds || []
@@ -475,28 +509,33 @@ export default function ContasPagar() {
             <button key={t.value} onClick={() => setStatusFilter(t.value)} className={`erp-tab ${statusFilter===t.value?'active':''}`}>{t.label}</button>
           ))}
         </div>
-        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
-          className="erp-select" style={{ width:'150px' }}>
-          <option value="">Todos os meses</option>
-          {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
-        </select>
+        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          <input value={busca} onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar fornecedor ou descrição..." className="erp-input" style={{ width:'240px' }} />
+          <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)}
+            className="erp-select" style={{ width:'150px' }}>
+            <option value="">Todos os meses</option>
+            {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
+        </div>
       </div>
       <div style={{ height:'1px', background:'#D8DDE6', marginBottom:'12px' }} />
 
       <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
-            <th>Fornecedor</th><th>Descrição</th>
-            <th style={{ width:'120px' }}>Categoria</th>
-            <th style={{ width:'90px' }}>Vencimento</th>
-            <th style={{ width:'80px' }}>Pagamento</th>
-            <th className="right" style={{ width:'110px' }}>Valor</th>
-            <th style={{ width:'90px' }}>Status</th>
+            <th onClick={() => toggleSort('fornecedor')} style={{ cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Fornecedor{ind('fornecedor')}</th>
+            <th onClick={() => toggleSort('descricao')}  style={{ cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Descrição{ind('descricao')}</th>
+            <th onClick={() => toggleSort('categoria')}  style={{ width:'120px', cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Categoria{ind('categoria')}</th>
+            <th onClick={() => toggleSort('vencimento')} style={{ width:'90px', cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Vencimento{ind('vencimento')}</th>
+            <th onClick={() => toggleSort('pagamento')}  style={{ width:'80px', cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Pagamento{ind('pagamento')}</th>
+            <th onClick={() => toggleSort('valor')} className="right" style={{ width:'110px', cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Valor{ind('valor')}</th>
+            <th onClick={() => toggleSort('status')}     style={{ width:'90px', cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>Status{ind('status')}</th>
             <th style={{ width:'160px' }}>Ações</th>
           </tr></thead>
           <tbody>
-            {filtered.length===0 && <tr className="empty"><td colSpan={8}>Nenhuma conta encontrada</td></tr>}
-            {filtered.map(conta => {
+            {ordenadas.length===0 && <tr className="empty"><td colSpan={8}>Nenhuma conta encontrada</td></tr>}
+            {ordenadas.map(conta => {
               const forn = fornecedores.find(f => f.id===conta.fornecedorId)
               const cat  = categorias.find(c => c.id===conta.categoriaId)
               const isCruzado = conta.lancIds?.length>0 && conta.formaPagamento==='cruzado'
