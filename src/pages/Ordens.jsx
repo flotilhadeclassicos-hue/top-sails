@@ -165,22 +165,57 @@ export function OrdemForm({ initial, ordens, onSave, onClose }) {
 
   const dataEntrega = form.dataRetirada && form.prazoDias ? addDays(form.dataRetirada, form.prazoDias) : null
 
+  // Conta a receber vinculada a esta OS (por id direto ou por ordemId)
+  const contaReceber = initial?.id
+    ? readLocal('ts_contasReceber', []).find(c => c.id === initial.contaReceberId || c.ordemId === initial.id)
+    : null
+  const contaRecebida = contaReceber?.status === 'confirmado'
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const numero = initial?.numero || generateOSNumber(ordens)
-    const saved = { ...form, id:initial?.id||uuid(), numero, valor:parseFloat(form.valor)||0, prazoDias:parseInt(form.prazoDias)||0, dataEntrega }
-    if (!initial?.id && saved.valor > 0) {
-      const contas = readLocal('ts_contasReceber', [])
-      const cat = categorias.find(c => c.id === saved.categoriaId)
-      const cli = clientes.find(c => c.id === saved.clienteId)
+    // Conta a receber já recebida: valor é imutável — preserva o valor original.
+    const valorFinal = contaRecebida ? (parseFloat(initial.valor) || 0) : (parseFloat(form.valor) || 0)
+    const saved = { ...form, id:initial?.id||uuid(), numero, valor:valorFinal, prazoDias:parseInt(form.prazoDias)||0, dataEntrega }
+
+    const cat = categorias.find(c => c.id === saved.categoriaId)
+    const cli = clientes.find(c => c.id === saved.clienteId)
+    const descConta = `${numero} — ${cat?.nome||'Serviço'}${cli?' / '+cli.nome:''}`
+    const contas = readLocal('ts_contasReceber', [])
+
+    if (!initial?.id) {
+      // Nova OS — cria a conta a receber se houver valor
+      if (saved.valor > 0) {
+        const contaId = uuid()
+        writeLocal('ts_contasReceber', [...contas, {
+          id:contaId, descricao:descConta,
+          categoriaId:saved.categoriaId, valor:saved.valor, vencimento:dataEntrega||today(),
+          status:'aberto', ordemId:saved.id, lancIds:[], formaPagamento:null, baixaCruzadaId:null,
+        }])
+        saved.contaReceberId = contaId
+      }
+    } else if (contaReceber && contaReceber.status === 'aberto') {
+      // Editando OS com conta em aberto — sincroniza a conta a receber
+      writeLocal('ts_contasReceber', contas.map(c =>
+        c.id === contaReceber.id
+          ? { ...c, valor:saved.valor, vencimento:dataEntrega||c.vencimento||today(), categoriaId:saved.categoriaId, descricao:descConta }
+          : c
+      ))
+      saved.contaReceberId = contaReceber.id
+    } else if (!contaReceber && saved.valor > 0) {
+      // OS sem conta lançada — cria agora para manter consistência
       const contaId = uuid()
       writeLocal('ts_contasReceber', [...contas, {
-        id:contaId, descricao:`${numero} — ${cat?.nome||'Serviço'}${cli?' / '+cli.nome:''}`,
+        id:contaId, descricao:descConta,
         categoriaId:saved.categoriaId, valor:saved.valor, vencimento:dataEntrega||today(),
         status:'aberto', ordemId:saved.id, lancIds:[], formaPagamento:null, baixaCruzadaId:null,
       }])
       saved.contaReceberId = contaId
+    } else if (contaReceber) {
+      // Conta já recebida — mantém o vínculo, não altera a conta
+      saved.contaReceberId = contaReceber.id
     }
+
     onSave(saved); onClose()
   }
 
@@ -217,7 +252,16 @@ export function OrdemForm({ initial, ordens, onSave, onClose }) {
           </div>
         )}
         <FField label="Valor (R$)">
-          <input type="number" min="0" step="0.01" value={form.valor} onChange={e => setForm(f => ({ ...f, valor:e.target.value }))} className="erp-input" />
+          <input type="number" min="0" step="0.01" value={form.valor}
+            onChange={e => setForm(f => ({ ...f, valor:e.target.value }))}
+            disabled={contaRecebida} className="erp-input"
+            title={contaRecebida ? 'Conta a receber já recebida — valor bloqueado' : undefined}
+            style={contaRecebida ? { background:'#F4F6F8', color:'#8A99A8', cursor:'not-allowed' } : undefined} />
+          {contaRecebida && (
+            <span style={{ fontSize:'10px', color:'#C62828', display:'block', marginTop:'3px' }}>
+              Conta a receber já recebida — valor bloqueado.
+            </span>
+          )}
         </FField>
         <FField label="Pedido Vinculado (opcional)" col="1 / -1">
           <select value={form.pedidoId||''} onChange={e => setForm(f => ({ ...f, pedidoId:e.target.value }))} className="erp-select">
