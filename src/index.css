@@ -166,6 +166,14 @@ body {
 .erp-page .erp-filter-row { margin-bottom:8px; }
 .erp-page .erp-filter-row .erp-input,
 .erp-page .erp-filter-row .erp-select { font-size:11px; }
+/* densidade igual ao relatório de Vendas: fonte/linhas menores, botões/abas compactos */
+.erp-page .erp-table { font-size:11px; }
+.erp-page .erp-table thead th { padding:5px 9px; font-size:10.5px; }
+.erp-page .erp-table tbody td { padding:4px 9px; font-size:11px; }
+.erp-page .erp-btn { padding:4px 10px; font-size:11px; }
+.erp-page .erp-btn-sm { padding:3px 9px; font-size:11px; }
+.erp-page .erp-tab { padding:5px 13px; font-size:11px; }
+.erp-page .erp-select, .erp-page .erp-input { font-size:11px; }
 /* área de conteúdo rolável (usada quando o conteúdo é uma sub-view com tabela) */
 .erp-scroll { flex:1; min-height:0; overflow:auto; }
 /* sub-view que precisa ocupar a altura e delegar o scroll pra própria tabela */
