@@ -139,20 +139,20 @@ export default function Dashboard() {
         <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>Financeiro</div>
       </div>
 
-      {/* 2 colunas: Contas a Pagar | Contas a Receber */}
+      {/* 2 colunas: Contas a Receber | Contas a Pagar (alinha com as listas abaixo) */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'10px', alignItems:'start' }}>
-        <div>
-          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Pagar</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-            <KpiCard label="A Vencer" value={formatCurrency(valorPagAVencer)} sub={`${pagAVencer.length}`} subLabel="conta(s)" color="blue"   icon="📅" />
-            <KpiCard label="Vencido"  value={formatCurrency(valorPagAtraso)}  sub={`${pagAtrasadas.length}`} subLabel="conta(s)" color="orange" icon="⚠" />
-          </div>
-        </div>
         <div>
           <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Receber</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
             <KpiCard label="A Vencer" value={formatCurrency(valorRecAVencer)} sub={`${recAVencer.length}`} subLabel="conta(s)" color="blue" icon="📅" />
             <KpiCard label="Vencido"  value={formatCurrency(valorRecAtraso)}  sub={`${recAtrasadas.length}`} subLabel="conta(s)" color="red"  icon="⚠" />
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Pagar</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+            <KpiCard label="A Vencer" value={formatCurrency(valorPagAVencer)} sub={`${pagAVencer.length}`} subLabel="conta(s)" color="blue"   icon="📅" />
+            <KpiCard label="Vencido"  value={formatCurrency(valorPagAtraso)}  sub={`${pagAtrasadas.length}`} subLabel="conta(s)" color="orange" icon="⚠" />
           </div>
         </div>
       </div>
