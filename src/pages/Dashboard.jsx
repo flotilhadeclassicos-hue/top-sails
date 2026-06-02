@@ -110,9 +110,6 @@ export default function Dashboard() {
   // ── Financeiro ────────────────────────────────────────────────────────────
   // Contas a receber em atraso (usa vencimento — correto para atraso)
   const recAtrasadas = contasReceber.filter(c => c.status === 'aberto' && c.vencimento < hoje)
-  const clientesAtrasadosIds = new Set(
-    recAtrasadas.map(c => ordens.find(o => o.id === c.ordemId)?.clienteId).filter(Boolean)
-  )
   const valorRecAtraso = recAtrasadas.reduce((s, c) => s + (c.valor || 0), 0)
 
   // Contas a pagar em atraso
@@ -133,6 +130,12 @@ export default function Dashboard() {
   const recAbertoTotal = contasReceber
     .filter(c => c.status === 'aberto')
     .reduce((s, c) => s + (c.valor || 0), 0)
+
+  // A vencer (em aberto, vencimento >= hoje) — olhar pra frente
+  const pagAVencer      = contasPagar.filter(c => c.status === 'aberto' && c.vencimento >= hoje)
+  const valorPagAVencer = pagAVencer.reduce((s, c) => s + (c.valor || 0), 0)
+  const recAVencer      = contasReceber.filter(c => c.status === 'aberto' && c.vencimento >= hoje)
+  const valorRecAVencer = recAVencer.reduce((s, c) => s + (c.valor || 0), 0)
 
   // ── Operacional — Ordens ───────────────────────────────────────────────────
   const ordAguardando  = ordens.filter(o => o.status === 'aguardando')
@@ -186,24 +189,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'24px' }}>
-        <KpiCard
-          label="Clientes em Atraso"
-          value={clientesAtrasadosIds.size}
-          sub={formatCurrency(valorRecAtraso)}
-          subLabel="em aberto vencido"
-          color="red"
-          icon="⚠"
-        />
-        <KpiCard
-          label="Contas a Pagar em Atraso"
-          value={pagAtrasadas.length}
-          sub={formatCurrency(valorPagAtraso)}
-          subLabel="em aberto vencido"
-          color="orange"
-          icon="⚠"
-        />
-        {/* Faturamento: mês + acumulado numa só caixa */}
+      {/* 2 blocos: Contas a Pagar e Contas a Receber, cada um com A Vencer e Vencido */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
+        <div>
+          <div style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Contas a Pagar</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+            <KpiCard label="A Vencer" value={formatCurrency(valorPagAVencer)} sub={`${pagAVencer.length}`} subLabel="conta(s)" color="blue"   icon="📅" />
+            <KpiCard label="Vencido"  value={formatCurrency(valorPagAtraso)}  sub={`${pagAtrasadas.length}`} subLabel="conta(s)" color="orange" icon="⚠" />
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Contas a Receber</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+            <KpiCard label="A Vencer" value={formatCurrency(valorRecAVencer)} sub={`${recAVencer.length}`} subLabel="conta(s)" color="blue" icon="📅" />
+            <KpiCard label="Vencido"  value={formatCurrency(valorRecAtraso)}  sub={`${recAtrasadas.length}`} subLabel="conta(s)" color="red"  icon="⚠" />
+          </div>
+        </div>
+      </div>
+
+      {/* Faturamento: mês + acumulado numa só caixa */}
+      <div style={{ marginBottom:'24px' }}>
         <div style={{ background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px',
           padding:'14px 16px', boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
