@@ -278,7 +278,7 @@ export default function ContasReceber() {
       <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
-            <th>Descrição</th><th style={{ width:'130px' }}>Cliente</th>
+            <th>Descrição</th><th style={{ width:'260px' }}>Cliente</th>
             <th style={{ width:'110px' }}>Categoria</th>
             <th style={{ width:'90px' }}>Vencimento</th><th style={{ width:'80px' }}>Pagamento</th>
             <th className="right" style={{ width:'110px' }}>Valor</th>
