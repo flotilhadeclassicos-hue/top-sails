@@ -101,6 +101,22 @@ body {
 .erp-btn-danger-outline { background:#fff; color:#C62828; border-color:#C62828; }
 .erp-btn-danger-outline:hover { background:#FDECEA; }
 .erp-btn-sm { padding: 3px 8px; font-size: 11px; }
+
+/* Botão só-ícone usado nas ações de tabela (compacto) */
+.erp-icon-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:3px;
+  width:26px; height:26px; padding:0;
+  background:transparent; border:1px solid transparent; border-radius:4px;
+  color:#54698D; cursor:pointer; font-family:inherit; transition:background .15s, color .15s, border-color .15s;
+}
+.erp-icon-btn:hover  { background:#EEF3F8; color:#16191F; border-color:#D8DDE6; }
+.erp-icon-btn.green  { color:#2E7D32; }
+.erp-icon-btn.green:hover { background:#E7F5EC; color:#1B7F3B; }
+.erp-icon-btn.danger { color:#C62828; }
+.erp-icon-btn.danger:hover { background:#FDECEA; color:#B71C1C; }
+.erp-icon-btn.os     { width:auto; padding:0 6px; font-size:11px; font-weight:700; }
+.erp-icon-status     { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; }
+.erp-icon-status.green { color:#2E7D32; }
 .erp-btn-xs { padding: 2px 6px; font-size: 11px; }
 .erp-btn-link { background:transparent; color:#0070D2; border-color:transparent; padding:0; font-weight:400; }
 .erp-btn-link:hover { text-decoration:underline; }

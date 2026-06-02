@@ -3,6 +3,7 @@ import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
+import { IconEdit, IconTrash, IconDownload, IconCheck } from '../components/ui/icons'
 import { PreviewModal } from './Pedidos'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 
@@ -399,13 +400,13 @@ export default function Ordens() {
                     <StatusSelect value={ordem.status} onChange={v => handleStatusChange(ordem.id, v)} />
                   </td>
                   <td>
-                    <span style={{ display:'flex', gap:'8px', alignItems:'center', justifyContent:'flex-end', flexWrap:'wrap' }}>
+                    <span style={{ display:'flex', gap:'2px', alignItems:'center', justifyContent:'flex-end' }}>
                       {!jaRecebido && ordem.valor > 0 && conta && (
-                        <button onClick={() => setBaixaItem(conta)} className="erp-btn erp-btn-success erp-btn-xs">Baixar</button>
+                        <button onClick={() => setBaixaItem(conta)} className="erp-icon-btn green" title="Baixar (registrar recebimento)"><IconDownload /></button>
                       )}
-                      {jaRecebido && <span style={{ fontSize:'11px', color:'#2E7D32', fontWeight:600 }}>✓ Recebido</span>}
-                      <button onClick={() => { setEditItem(ordem); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
-                      <button onClick={() => setDeleteItem(ordem)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                      {jaRecebido && <span className="erp-icon-status green" title="Recebido"><IconCheck /></span>}
+                      <button onClick={() => { setEditItem(ordem); setShowForm(true) }} className="erp-icon-btn" title="Editar"><IconEdit /></button>
+                      <button onClick={() => setDeleteItem(ordem)} className="erp-icon-btn danger" title="Excluir"><IconTrash /></button>
                     </span>
                   </td>
                 </tr>

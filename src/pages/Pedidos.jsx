@@ -5,6 +5,7 @@ import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber,
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 import Badge from '../components/ui/Badge'
+import { IconEdit, IconTrash, IconPdf, IconPlus, IconCheck } from '../components/ui/icons'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -1032,23 +1033,20 @@ export default function Pedidos() {
                       : <span className="muted">—</span>}
                   </td>
                   <td>
-                    <span style={{ display:'flex', gap:'6px', alignItems:'center', flexWrap:'wrap' }}>
+                    <span style={{ display:'flex', gap:'2px', alignItems:'center' }}>
                       <button onClick={() => { setEditItem(pedido); setShowForm(true) }}
-                        className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
+                        className="erp-icon-btn" title="Editar"><IconEdit /></button>
                       {!temOS
                         ? <button onClick={() => handleGerarOS(pedido)}
-                            className="erp-btn erp-btn-secondary erp-btn-xs"
-                            title="Gerar OS a partir deste pedido">
-                            ＋ Gerar OS
+                            className="erp-icon-btn os" title="Gerar OS a partir deste pedido">
+                            <IconPlus size={13} />OS
                           </button>
-                        : <span style={{ fontSize:'11px', color:'#2E7D32', fontWeight:600 }}>✓ OS gerada</span>
+                        : <span className="erp-icon-status green" title="OS gerada"><IconCheck /></span>
                       }
                       <button onClick={() => setPreviewPedido(pedido)}
-                        className="erp-btn erp-btn-secondary erp-btn-xs" title="Pré-visualizar e exportar PDF">
-                        🔍 PDF
-                      </button>
+                        className="erp-icon-btn" title="Pré-visualizar e exportar PDF"><IconPdf /></button>
                       <button onClick={() => setDeleteItem(pedido)}
-                        className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                        className="erp-icon-btn danger" title="Excluir"><IconTrash /></button>
                     </span>
                   </td>
                 </tr>
