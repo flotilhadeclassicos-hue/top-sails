@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
-import { formatCurrencyInt as formatCurrency, formatDate } from '../utils/helpers'
+import { formatCurrencyInt as formatCurrency, formatCurrency as fmtFull, formatDate, addDays } from '../utils/helpers'
 import ChevronKPI from '../components/ui/ChevronKPI'
+import Modal from '../components/ui/Modal'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
 
@@ -51,26 +53,56 @@ function SectionHeader({ title, subtitle }) {
 }
 
 // ── Lista de atrasos ──────────────────────────────────────────────────────────
-function AtrasoList({ items }) {
-  if (items.length === 0) return <div style={{ fontSize:'11px', color:'#8A99A8', fontStyle:'italic', padding:'4px 0' }}>Nenhum em atraso ✓</div>
+function AtrasoList({ items, emptyMsg, onSelect }) {
+  if (items.length === 0) return <div style={{ fontSize:'11px', color:'#8A99A8', fontStyle:'italic', padding:'4px 0' }}>{emptyMsg || 'Nenhum em atraso ✓'}</div>
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:'3px', marginTop:'5px' }}>
-      {items.slice(0, 3).map((item, i) => (
-        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-          padding:'3px 7px', background:'#FFF', border:'1px solid #F5C8C8', borderRadius:'2px', fontSize:'10px' }}>
-          <div style={{ minWidth:0, overflow:'hidden' }}>
-            <div style={{ fontWeight:600, color:'#16191F', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
-            <div style={{ color:'#8A99A8' }}>Venc. {formatDate(item.vencimento)}</div>
+    <div style={{ display:'flex', flexDirection:'column', gap:'3px', marginTop:'5px', maxHeight:'150px', overflowY:'auto', paddingRight:'2px' }}>
+      {items.map((item, i) => {
+        const overdue = item.atrasado
+        return (
+          <div key={i} onClick={() => onSelect?.(item)}
+            style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer',
+              padding:'3px 7px', background:'#FFF', border:`1px solid ${overdue ? '#F5C8C8' : '#D8DDE6'}`, borderRadius:'2px', fontSize:'10px' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#F4F6F8'}
+            onMouseLeave={e => e.currentTarget.style.background = '#FFF'}>
+            <div style={{ minWidth:0, overflow:'hidden' }}>
+              <div style={{ fontWeight:600, color:'#16191F', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
+              <div style={{ color: overdue ? '#C62828' : '#8A99A8' }}>
+                {overdue ? 'Vencido ' : 'Vence '}{formatDate(item.vencimento)}
+              </div>
+            </div>
+            <div style={{ fontWeight:700, color: overdue ? '#C62828' : '#16191F', whiteSpace:'nowrap', marginLeft:'8px' }}>{formatCurrency(item.valor)}</div>
           </div>
-          <div style={{ fontWeight:700, color:'#C62828', whiteSpace:'nowrap', marginLeft:'8px' }}>{formatCurrency(item.valor)}</div>
-        </div>
-      ))}
-      {items.length > 3 && (
-        <div style={{ fontSize:'10px', color:'#54698D', textAlign:'center', padding:'2px' }}>
-          + {items.length - 3} contas a mais
-        </div>
-      )}
+        )
+      })}
     </div>
+  )
+}
+
+// ── Modal de detalhe do lançamento (conta a receber/pagar) ────────────────────
+function LancamentoModal({ item, categorias, onClose }) {
+  const c = item.conta
+  const cat = categorias.find(x => x.id === c.categoriaId)
+  const tipoLabel = item.tipo === 'receber' ? 'Conta a Receber' : 'Conta a Pagar'
+  const statusLabel = c.status === 'confirmado' ? (item.tipo === 'receber' ? 'Recebido' : 'Pago') : 'Em aberto'
+  const L = { fontSize:'10px', fontWeight:700, color:'#7F8C9A', textTransform:'uppercase', letterSpacing:'0.04em' }
+  const V = { fontSize:'13px', color:'#16191F', marginBottom:'10px' }
+  return (
+    <Modal title={`${tipoLabel} — ${item.nome}`} onClose={onClose} size="sm">
+      <div style={{ display:'flex', alignItems:'baseline', gap:'10px', marginBottom:'12px' }}>
+        <span style={{ fontSize:'22px', fontWeight:800, color: item.tipo==='receber' ? '#2E7D32' : '#C62828' }}>{fmtFull(c.valor)}</span>
+        <span style={{ fontSize:'11px', fontWeight:600, color: item.atrasado ? '#C62828' : '#54698D' }}>
+          {item.atrasado ? 'Vencido' : 'A vencer'} · {statusLabel}
+        </span>
+      </div>
+      <div style={L}>Descrição</div><div style={V}>{c.descricao || '—'}</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+        <div><div style={L}>Vencimento</div><div style={V}>{formatDate(c.vencimento)}</div></div>
+        <div><div style={L}>Categoria</div><div style={V}>{cat?.nome || '—'}</div></div>
+        <div><div style={L}>{item.tipo === 'receber' ? 'Cliente' : 'Fornecedor'}</div><div style={V}>{item.nome}</div></div>
+        <div><div style={L}>Forma</div><div style={V}>{c.formaPagamento || '—'}</div></div>
+      </div>
+    </Modal>
   )
 }
 
@@ -84,6 +116,8 @@ export default function Dashboard() {
   const [pedidos] = useLocalState('ts_pedidos', [])
   const [clientes] = useLocalState('ts_clientes', [])
   const [fornecedores] = useLocalState('ts_fornecedores', [])
+  const [categorias] = useLocalState('ts_categorias', [])
+  const [lancamento, setLancamento] = useState(null)
   // ── Financeiro ────────────────────────────────────────────────────────────
   // Contas a receber em atraso (usa vencimento — correto para atraso)
   const recAtrasadas = contasReceber.filter(c => c.status === 'aberto' && c.vencimento < hoje)
@@ -113,16 +147,19 @@ export default function Dashboard() {
   const pedAguardando  = pedidos.filter(p => p.status === 'pedAguardando')
   const somaPed = (list) => list.reduce((s, p) => s + (p.total || 0), 0)
 
-  // Lista de atrasos com nomes
+  // Contas a receber vencidas — todas, com detalhe p/ modal
   const recAtrasadasDetalhes = recAtrasadas.map(c => {
     const ordem = ordens.find(o => o.id === c.ordemId)
     const cli   = clientes.find(cl => cl.id === ordem?.clienteId)
-    return { nome: cli?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
+    return { conta:c, tipo:'receber', atrasado:true, nome: cli?.nome || c.clienteNome || c.descricao, vencimento: c.vencimento, valor: c.valor }
   }).sort((a, b) => (a.vencimento || '').localeCompare(b.vencimento || ''))
 
-  const pagAtrasadasDetalhes = pagAtrasadas.map(c => {
+  // Contas a pagar — atrasadas + a vencer nos próximos 15 dias
+  const limite15 = addDays(hoje, 15)
+  const pagProximas = contasPagar.filter(c => c.status === 'aberto' && c.vencimento && c.vencimento <= limite15)
+  const pagProximasDetalhes = pagProximas.map(c => {
     const forn = fornecedores.find(f => f.id === c.fornecedorId)
-    return { nome: forn?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
+    return { conta:c, tipo:'pagar', atrasado: c.vencimento < hoje, nome: forn?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
   }).sort((a, b) => (a.vencimento || '').localeCompare(b.vencimento || ''))
 
   return (
@@ -157,19 +194,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Listas de atraso */}
+      {/* Listas: Receber vencidas | Pagar (atraso + próximos 15 dias) */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
         <div className="erp-panel" style={{ padding:'9px 11px' }}>
           <div style={{ fontSize:'10px', fontWeight:700, color:'#C62828', textTransform:'uppercase', letterSpacing:'0.05em' }}>
-            ⚠ Contas a Receber Vencidas ({recAtrasadas.length})
+            ⚠ Contas a Receber Vencidas ({recAtrasadasDetalhes.length})
           </div>
-          <AtrasoList items={recAtrasadasDetalhes} />
+          <AtrasoList items={recAtrasadasDetalhes} emptyMsg="Nenhuma vencida ✓" onSelect={setLancamento} />
         </div>
         <div className="erp-panel" style={{ padding:'9px 11px' }}>
           <div style={{ fontSize:'10px', fontWeight:700, color:'#E65100', textTransform:'uppercase', letterSpacing:'0.05em' }}>
-            ⚠ Contas a Pagar Vencidas ({pagAtrasadas.length})
+            ⚠ Contas a Pagar — Atraso + Próx. 15 dias ({pagProximasDetalhes.length})
           </div>
-          <AtrasoList items={pagAtrasadasDetalhes} />
+          <AtrasoList items={pagProximasDetalhes} emptyMsg="Nada a pagar nos próximos 15 dias ✓" onSelect={setLancamento} />
         </div>
       </div>
 
@@ -199,6 +236,8 @@ export default function Dashboard() {
           ]}
         />
       </div>
+
+      {lancamento && <LancamentoModal item={lancamento} categorias={categorias} onClose={() => setLancamento(null)} />}
     </div>
   )
 }
