@@ -158,6 +158,22 @@ body {
 /* ── ERP Panel ───────────────────────────────────────── */
 .erp-panel { background:#fff; border:1px solid #D8DDE6; border-radius:2px; overflow:hidden; }
 
+/* ── Página encaixada na viewport: cabeçalho/filtros fixos, só a tabela rola ── */
+.erp-page { height:100%; display:flex; flex-direction:column; padding:12px 16px; min-height:0; }
+.erp-page .erp-bc { margin-bottom:6px; }
+.erp-page .erp-toolbar { margin-bottom:8px; padding-bottom:6px; }
+.erp-page .erp-page-title { font-size:14px; }
+.erp-page .erp-filter-row { margin-bottom:8px; }
+.erp-page .erp-filter-row .erp-input,
+.erp-page .erp-filter-row .erp-select { font-size:11px; }
+/* área de conteúdo rolável (usada quando o conteúdo é uma sub-view com tabela) */
+.erp-scroll { flex:1; min-height:0; overflow:auto; }
+/* sub-view que precisa ocupar a altura e delegar o scroll pra própria tabela */
+.erp-fill { flex:1; min-height:0; display:flex; flex-direction:column; }
+/* painel da lista principal: ocupa o resto e rola interno, com cabeçalho fixo */
+.erp-panel-fill { flex:1; min-height:0; overflow:auto; }
+.erp-panel-fill .erp-table thead th { position:sticky; top:0; z-index:2; }
+
 /* ── ERP Search/Filter row ───────────────────────────── */
 .erp-filter-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .erp-filter-row .erp-input,

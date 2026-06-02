@@ -63,7 +63,7 @@ export default function ConsolidadoView() {
   const saldo  = totalC - totalD
 
   return (
-    <div>
+    <div className="erp-fill">
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px' }}>
         <h2 style={{ margin:0, fontSize:'13px', fontWeight:600, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.04em' }}>
           Consolidado — Bancos + Caixinha + Reserva + Off Book
@@ -109,7 +109,7 @@ export default function ConsolidadoView() {
         </select>
       </div>
 
-      <div className="erp-panel">
+      <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
             <th style={{ width:'90px' }}>Data</th>

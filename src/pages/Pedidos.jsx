@@ -951,7 +951,7 @@ export default function Pedidos() {
   const totalEnviado    = pedidos.filter(p => p.status==='pedEnviado').reduce((s,p)=>s+(p.total||0),0)
 
   return (
-    <div style={{ padding:'20px 24px' }}>
+    <div className="erp-page">
       <nav className="erp-bc">
         <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Pedidos</span>
       </nav>
@@ -992,7 +992,7 @@ export default function Pedidos() {
       </div>
 
       {/* Table */}
-      <div className="erp-panel">
+      <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
             <th style={{ width:'130px' }}>Número</th>

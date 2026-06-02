@@ -25,9 +25,9 @@ export default function FluxoCaixaView() {
   }
 
   return (
-    <div>
+    <div className="erp-fill">
       {/* Seletor de conta */}
-      <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'14px' }}>
         <span style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap' }}>
           Visualizar:
         </span>

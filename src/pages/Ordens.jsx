@@ -331,7 +331,7 @@ export default function Ordens() {
   }
 
   return (
-    <div style={{ padding:'20px 24px' }}>
+    <div className="erp-page">
       <nav className="erp-bc">
         <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Ordens de Serviço</span>
       </nav>
@@ -352,7 +352,7 @@ export default function Ordens() {
         </select>
       </div>
 
-      <div className="erp-panel">
+      <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead>
             <tr>

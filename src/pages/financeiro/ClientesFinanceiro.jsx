@@ -99,7 +99,7 @@ export default function ClientesFinanceiro() {
   const comSaldo      = filtered.filter(c => c.saldoAberto > 0).length
 
   return (
-    <div>
+    <div className="erp-fill">
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px' }}>
         <h2 style={{ margin:0, fontSize:'13px', fontWeight:600, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.04em' }}>
           Clientes — Saldo a Receber
@@ -123,7 +123,7 @@ export default function ClientesFinanceiro() {
         </label>
       </div>
 
-      <div className="erp-panel">
+      <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
             <th>Cliente</th>

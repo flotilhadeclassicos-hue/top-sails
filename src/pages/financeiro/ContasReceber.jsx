@@ -248,7 +248,7 @@ export default function ContasReceber() {
   ]
 
   return (
-    <div>
+    <div className="erp-fill">
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px' }}>
         <h2 style={{ margin:0, fontSize:'13px', fontWeight:600, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.04em' }}>Contas a Receber</h2>
         <button onClick={() => { setEditItem(null); setShowForm(true) }} className="erp-btn erp-btn-primary erp-btn-sm">+ Nova Conta</button>
@@ -274,7 +274,7 @@ export default function ContasReceber() {
       </div>
       <div style={{ height:'1px', background:'#D8DDE6', marginBottom:'12px' }} />
 
-      <div className="erp-panel">
+      <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
             <th>Descrição</th><th style={{ width:'130px' }}>Cliente</th>
