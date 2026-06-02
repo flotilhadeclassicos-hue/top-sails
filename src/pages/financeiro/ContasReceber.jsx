@@ -3,6 +3,7 @@ import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
+import { IconEdit, IconTrash, IconDownload, IconUndo, IconLink } from '../../components/ui/icons'
 import ClienteModal, { LinkBtn } from '../../components/ui/ClienteModal'
 import { PreviewModal } from '../Pedidos'
 
@@ -312,14 +313,14 @@ export default function ContasReceber() {
                       : <Badge value={conta.status} />}
                   </td>
                   <td>
-                    <span style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
+                    <span style={{ display:'flex', gap:'2px', alignItems:'center' }}>
                       {conta.status==='aberto' && <>
-                        <button onClick={() => setBaixaItem(conta)} className="erp-btn erp-btn-success erp-btn-xs">Baixar</button>
-                        <button onClick={() => { setEditItem(conta); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
+                        <button onClick={() => setBaixaItem(conta)} className="erp-icon-btn green" title="Baixar (registrar recebimento)"><IconDownload /></button>
+                        <button onClick={() => { setEditItem(conta); setShowForm(true) }} className="erp-icon-btn" title="Editar"><IconEdit /></button>
                       </>}
-                      {conta.status==='confirmado' && <button onClick={() => handleEstorno(conta)} className="erp-btn erp-btn-link erp-btn-sm" style={{ color:'#E65100' }}>↩ Estornar</button>}
-                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>(conta.lancIds||[]).includes(i.id)&&i.baixaCruzadaId); if(f?.baixaCruzadaId) setCadeiaId(f.baixaCruzadaId) }} className="erp-btn erp-btn-link-purple erp-btn-sm">Ver cadeia</button>}
-                      <button onClick={() => setDeleteItem(conta)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                      {conta.status==='confirmado' && <button onClick={() => handleEstorno(conta)} className="erp-icon-btn warn" title="Estornar"><IconUndo /></button>}
+                      {isCruzado && <button onClick={() => { const ob=readLocal('ts_offBook',[]); const f=ob.find(i=>(conta.lancIds||[]).includes(i.id)&&i.baixaCruzadaId); if(f?.baixaCruzadaId) setCadeiaId(f.baixaCruzadaId) }} className="erp-icon-btn purple" title="Ver cadeia"><IconLink /></button>}
+                      <button onClick={() => setDeleteItem(conta)} className="erp-icon-btn danger" title="Excluir"><IconTrash /></button>
                     </span>
                   </td>
                 </tr>

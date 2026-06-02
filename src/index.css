@@ -114,6 +114,10 @@ body {
 .erp-icon-btn.green:hover { background:#E7F5EC; color:#1B7F3B; }
 .erp-icon-btn.danger { color:#C62828; }
 .erp-icon-btn.danger:hover { background:#FDECEA; color:#B71C1C; }
+.erp-icon-btn.warn   { color:#E65100; }
+.erp-icon-btn.warn:hover   { background:#FBEEE3; color:#BF360C; }
+.erp-icon-btn.purple { color:#6A1B9A; }
+.erp-icon-btn.purple:hover { background:#F3EAF8; color:#4A148C; }
 .erp-icon-btn.os     { width:auto; padding:0 6px; font-size:11px; font-weight:700; }
 .erp-icon-status     { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; }
 .erp-icon-status.green { color:#2E7D32; }

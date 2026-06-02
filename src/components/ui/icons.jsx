@@ -62,3 +62,21 @@ export function IconPlus({ size }) {
     </svg>
   )
 }
+
+export function IconUndo({ size }) {
+  return (
+    <svg {...base(size)} aria-hidden="true">
+      <path d="M3 7v6h6" />
+      <path d="M3 13a9 9 0 1 0 3-7.7L3 8" />
+    </svg>
+  )
+}
+
+export function IconLink({ size }) {
+  return (
+    <svg {...base(size)} aria-hidden="true">
+      <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" />
+      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5" />
+    </svg>
+  )
+}
