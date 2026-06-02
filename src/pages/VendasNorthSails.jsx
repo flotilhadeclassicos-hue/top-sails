@@ -16,6 +16,15 @@ const STATUS_COR = {
   'Pronto p/ envio':  { bg:'#E6F6FA', fg:'#0E7490' },
 }
 
+// Encurta nomes longos de empresa pra caber na coluna (tooltip mostra o completo)
+function empresaCurta(nome) {
+  if (!nome) return '—'
+  if (/north\s*sails/i.test(nome)) return 'North Sails'
+  if (/international\s*marine/i.test(nome)) return 'Intl. Marine'
+  if (/orcca/i.test(nome)) return 'ORCCA'
+  return nome.length > 22 ? nome.slice(0, 22) + '…' : nome
+}
+
 function StatusBadge({ label }) {
   const c = STATUS_COR[label] || { bg:'#F4F6F8', fg:'#54698D' }
   return (
@@ -62,6 +71,7 @@ function VendaDetalheModal({ venda, onClose }) {
       <div style={SEC}>Pedido</div>
       <Grid>
         <Campo label="Nº Pedido">{v.numeroPedido}</Campo>
+        <Campo label="Empresa">{v.empresa}</Campo>
         <Campo label="Data">{formatDate(v.data)}</Campo>
         <Campo label="Status">{v.situacaoLabel}</Campo>
         <Campo label="Nota Fiscal">{v.idNotaFiscal}</Campo>
@@ -180,6 +190,7 @@ export default function VendasNorthSails() {
 
   const [detalhe, setDetalhe]     = useState(null)
   const [fMes, setFMes]           = useState('')
+  const [fEmpresa, setFEmpresa]   = useState('')
   const [fVendedor, setFVendedor] = useState('')
   const [fStatus, setFStatus]     = useState('')
   const [busca, setBusca]         = useState('')
@@ -210,6 +221,10 @@ export default function VendasNorthSails() {
     }
   }
 
+  const empresas = useMemo(
+    () => [...new Set(vendas.map(v => v.empresa).filter(Boolean))].sort(),
+    [vendas]
+  )
   const vendedores = useMemo(
     () => [...new Set(vendas.map(v => v.vendedorNome).filter(Boolean))].sort(),
     [vendas]
@@ -227,6 +242,7 @@ export default function VendasNorthSails() {
     const b = busca.trim().toLowerCase()
     return vendas
       .filter(v => !fMes      || getMonthKey(v.data) === fMes)
+      .filter(v => !fEmpresa  || v.empresa === fEmpresa)
       .filter(v => !fVendedor || v.vendedorNome === fVendedor)
       .filter(v => !fStatus   || v.situacaoLabel === fStatus)
       .filter(v => !b
@@ -234,7 +250,7 @@ export default function VendasNorthSails() {
         || (v.cliente?.nome || '').toLowerCase().includes(b)
         || (v.numeroOrdemCompra || '').toLowerCase().includes(b))
       .sort((a, z) => String(z.data || '').localeCompare(String(a.data || '')) || z.numeroPedido - a.numeroPedido)
-  }, [vendas, fMes, fVendedor, fStatus, busca])
+  }, [vendas, fMes, fEmpresa, fVendedor, fStatus, busca])
 
   const totalValor = filtradas.reduce((s, v) => s + (v.valor || 0), 0)
 
@@ -277,6 +293,10 @@ export default function VendasNorthSails() {
           <option value="">Todos os meses</option>
           {meses.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
         </select>
+        <select value={fEmpresa} onChange={e => setFEmpresa(e.target.value)} style={selStyle}>
+          <option value="">Todas as empresas</option>
+          {empresas.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
         <select value={fVendedor} onChange={e => setFVendedor(e.target.value)} style={selStyle}>
           <option value="">Todos os vendedores</option>
           {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
@@ -305,6 +325,7 @@ export default function VendasNorthSails() {
               <tr style={{ background:'#F4F6F8', textAlign:'left', color:'#54698D' }}>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Data</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Nº Pedido</th>
+                <th style={{ padding:'8px 10px', fontWeight:600 }}>Empresa</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Cliente</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Itens</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Vendedor</th>
@@ -321,6 +342,7 @@ export default function VendasNorthSails() {
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                   <td style={{ padding:'8px 10px', color:'#16191F', whiteSpace:'nowrap' }}>{formatDate(v.data)}</td>
                   <td style={{ padding:'8px 10px', color:'#16191F', fontWeight:600 }}>{v.numeroPedido}</td>
+                  <td style={{ padding:'8px 10px', color:'#54698D' }} title={v.empresa || ''}>{empresaCurta(v.empresa)}</td>
                   <td style={{ padding:'8px 10px', color:'#16191F' }}>{v.cliente?.nome || '—'}</td>
                   <td style={{ padding:'8px 10px', color:'#54698D', maxWidth:'280px' }}>
                     {v.itens?.length > 0 ? (
