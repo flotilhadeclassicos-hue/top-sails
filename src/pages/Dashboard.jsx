@@ -39,20 +39,20 @@ function KpiCard({ label, value, sub, subLabel, color, icon, onClick }) {
   return (
     <div onClick={onClick}
       style={{ background:c.bg, border:`1px solid ${c.border}`, borderRadius:'2px',
-        padding:'14px 16px', cursor: onClick ? 'pointer' : 'default',
+        padding:'8px 11px', cursor: onClick ? 'pointer' : 'default',
         transition:'box-shadow .15s', boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}
       onMouseEnter={e => { if(onClick) e.currentTarget.style.boxShadow='0 3px 8px rgba(0,0,0,.12)' }}
       onMouseLeave={e => { if(onClick) e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,.06)' }}
     >
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'8px' }}>
-        <span style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:c.text }}>{label}</span>
-        {icon && <span style={{ fontSize:'16px', opacity:0.7 }}>{icon}</span>}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'3px' }}>
+        <span style={{ fontSize:'9px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:c.text }}>{label}</span>
+        {icon && <span style={{ fontSize:'13px', opacity:0.7 }}>{icon}</span>}
       </div>
-      <div style={{ fontSize:'22px', fontWeight:800, color:c.val, letterSpacing:'-0.02em', marginBottom:'4px' }}>
+      <div style={{ fontSize:'17px', fontWeight:800, color:c.val, letterSpacing:'-0.02em', marginBottom:'1px', lineHeight:1.1 }}>
         {value}
       </div>
       {(sub !== undefined || subLabel) && (
-        <div style={{ fontSize:'11px', color:c.text, opacity:0.8 }}>
+        <div style={{ fontSize:'10px', color:c.text, opacity:0.8 }}>
           {sub !== undefined && <span style={{ fontWeight:600 }}>{sub}</span>}
           {subLabel && <span> {subLabel}</span>}
         </div>
@@ -64,31 +64,31 @@ function KpiCard({ label, value, sub, subLabel, color, icon, onClick }) {
 // ── Section header ────────────────────────────────────────────────────────────
 function SectionHeader({ title, subtitle }) {
   return (
-    <div style={{ marginBottom:'12px', paddingBottom:'8px', borderBottom:'2px solid #D8DDE6' }}>
-      <div style={{ fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>{title}</div>
-      {subtitle && <div style={{ fontSize:'11px', color:'#8A99A8', marginTop:'2px' }}>{subtitle}</div>}
+    <div style={{ marginBottom:'6px', paddingBottom:'4px', borderBottom:'2px solid #D8DDE6' }}>
+      <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>{title}</div>
+      {subtitle && <div style={{ fontSize:'10px', color:'#8A99A8', marginTop:'1px' }}>{subtitle}</div>}
     </div>
   )
 }
 
 // ── Lista de atrasos ──────────────────────────────────────────────────────────
-function AtrasoList({ items, tipo }) {
-  if (items.length === 0) return <div style={{ fontSize:'12px', color:'#8A99A8', fontStyle:'italic', padding:'8px 0' }}>Nenhum em atraso ✓</div>
+function AtrasoList({ items }) {
+  if (items.length === 0) return <div style={{ fontSize:'11px', color:'#8A99A8', fontStyle:'italic', padding:'4px 0' }}>Nenhum em atraso ✓</div>
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:'4px', marginTop:'8px' }}>
-      {items.slice(0, 5).map((item, i) => (
+    <div style={{ display:'flex', flexDirection:'column', gap:'3px', marginTop:'5px' }}>
+      {items.slice(0, 3).map((item, i) => (
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-          padding:'5px 8px', background:'#FFF', border:'1px solid #F5C8C8', borderRadius:'2px', fontSize:'11px' }}>
-          <div>
-            <div style={{ fontWeight:600, color:'#16191F' }}>{item.nome}</div>
+          padding:'3px 7px', background:'#FFF', border:'1px solid #F5C8C8', borderRadius:'2px', fontSize:'10px' }}>
+          <div style={{ minWidth:0, overflow:'hidden' }}>
+            <div style={{ fontWeight:600, color:'#16191F', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
             <div style={{ color:'#8A99A8' }}>Venc. {formatDate(item.vencimento)}</div>
           </div>
-          <div style={{ fontWeight:700, color:'#C62828' }}>{formatCurrency(item.valor)}</div>
+          <div style={{ fontWeight:700, color:'#C62828', whiteSpace:'nowrap', marginLeft:'8px' }}>{formatCurrency(item.valor)}</div>
         </div>
       ))}
-      {items.length > 5 && (
-        <div style={{ fontSize:'11px', color:'#54698D', textAlign:'center', padding:'4px' }}>
-          + {items.length - 5} {tipo === 'receber' ? 'contas' : 'contas'} a mais
+      {items.length > 3 && (
+        <div style={{ fontSize:'10px', color:'#54698D', textAlign:'center', padding:'2px' }}>
+          + {items.length - 3} contas a mais
         </div>
       )}
     </div>
@@ -166,74 +166,52 @@ export default function Dashboard() {
   const mesLabel = monthLabel(mes)
 
   return (
-    <div style={{ padding:'20px 24px' }}>
-      <nav className="erp-bc">
-        <span>TOP SAIL</span><span className="sep">/</span><span className="cur">Dashboard</span>
-      </nav>
-      <div className="erp-toolbar">
-        <h1 className="erp-page-title">Dashboard ⛵</h1>
-        <span style={{ fontSize:'11px', color:'#8A99A8' }}>
+    <div style={{ padding:'10px 16px' }}>
+      <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'8px' }}>
+        <h1 className="erp-page-title" style={{ fontSize:'14px', margin:0 }}>Dashboard ⛵</h1>
+        <span style={{ fontSize:'10px', color:'#8A99A8' }}>
           {new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}
         </span>
       </div>
 
       {/* ── FINANCEIRO ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px', paddingBottom:'8px', borderBottom:'2px solid #D8DDE6' }}>
-        <div>
-          <div style={{ fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>Financeiro</div>
-          <div style={{ fontSize:'11px', color:'#8A99A8', marginTop:'2px' }}>Faturamento baseado na data de entrega das ordens</div>
-        </div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px', paddingBottom:'4px', borderBottom:'2px solid #D8DDE6' }}>
+        <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>Financeiro</div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          <span style={{ fontSize:'11px', color:'#54698D', fontWeight:600 }}>Período:</span>
+          <span style={{ fontSize:'10px', color:'#54698D', fontWeight:600 }}>Período:</span>
           <MonthSelector value={mes} onChange={setMes} />
         </div>
       </div>
 
-      {/* 2 blocos: Contas a Pagar e Contas a Receber, cada um com A Vencer e Vencido */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
+      {/* 3 colunas: Contas a Pagar | Contas a Receber | Faturamento */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'12px', marginBottom:'10px', alignItems:'start' }}>
         <div>
-          <div style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Contas a Pagar</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Pagar</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
             <KpiCard label="A Vencer" value={formatCurrency(valorPagAVencer)} sub={`${pagAVencer.length}`} subLabel="conta(s)" color="blue"   icon="📅" />
             <KpiCard label="Vencido"  value={formatCurrency(valorPagAtraso)}  sub={`${pagAtrasadas.length}`} subLabel="conta(s)" color="orange" icon="⚠" />
           </div>
         </div>
         <div>
-          <div style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Contas a Receber</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Receber</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
             <KpiCard label="A Vencer" value={formatCurrency(valorRecAVencer)} sub={`${recAVencer.length}`} subLabel="conta(s)" color="blue" icon="📅" />
             <KpiCard label="Vencido"  value={formatCurrency(valorRecAtraso)}  sub={`${recAtrasadas.length}`} subLabel="conta(s)" color="red"  icon="⚠" />
           </div>
         </div>
-      </div>
-
-      {/* Faturamento: mês + acumulado numa só caixa */}
-      <div style={{ marginBottom:'24px' }}>
-        <div style={{ background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px',
-          padding:'14px 16px', boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
-            <span style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#0050A0' }}>
-              Faturamento
-            </span>
-            <span style={{ fontSize:'16px', opacity:0.7 }}>📈</span>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-            <div>
-              <div style={{ fontSize:'10px', color:'#0050A0', fontWeight:600, marginBottom:'2px' }}>{mesLabel}</div>
-              <div style={{ fontSize:'20px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1 }}>
-                {formatCurrency(fatMes)}
+        <div>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Faturamento</div>
+          <div style={{ background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px', padding:'8px 11px' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+              <div>
+                <div style={{ fontSize:'9px', color:'#0050A0', fontWeight:600, marginBottom:'1px' }}>{mesLabel}</div>
+                <div style={{ fontSize:'17px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1.1 }}>{formatCurrency(fatMes)}</div>
+                <div style={{ fontSize:'9px', color:'#0050A0', opacity:0.8, marginTop:'2px' }}>{formatCurrency(recAbertoTotal)} a receber</div>
               </div>
-              <div style={{ fontSize:'10px', color:'#0050A0', opacity:0.8, marginTop:'3px' }}>
-                {formatCurrency(recAbertoTotal)} a receber
-              </div>
-            </div>
-            <div style={{ borderLeft:'1px solid #A8C8E8', paddingLeft:'10px' }}>
-              <div style={{ fontSize:'10px', color:'#0050A0', fontWeight:600, marginBottom:'2px' }}>Jan–{mesLabel}</div>
-              <div style={{ fontSize:'20px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1 }}>
-                {formatCurrency(fatAcumulado)}
-              </div>
-              <div style={{ fontSize:'10px', color:'#0050A0', opacity:0.8, marginTop:'3px' }}>
-                acumulado {ano}
+              <div style={{ borderLeft:'1px solid #A8C8E8', paddingLeft:'10px' }}>
+                <div style={{ fontSize:'9px', color:'#0050A0', fontWeight:600, marginBottom:'1px' }}>Jan–{mesLabel}</div>
+                <div style={{ fontSize:'17px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1.1 }}>{formatCurrency(fatAcumulado)}</div>
+                <div style={{ fontSize:'9px', color:'#0050A0', opacity:0.8, marginTop:'2px' }}>acumulado {ano}</div>
               </div>
             </div>
           </div>
@@ -241,24 +219,24 @@ export default function Dashboard() {
       </div>
 
       {/* Listas de atraso */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'28px' }}>
-        <div className="erp-panel" style={{ padding:'14px 16px' }}>
-          <div style={{ fontSize:'11px', fontWeight:700, color:'#C62828', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'6px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
+        <div className="erp-panel" style={{ padding:'9px 11px' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#C62828', textTransform:'uppercase', letterSpacing:'0.05em' }}>
             ⚠ Contas a Receber Vencidas ({recAtrasadas.length})
           </div>
-          <AtrasoList items={recAtrasadasDetalhes} tipo="receber" />
+          <AtrasoList items={recAtrasadasDetalhes} />
         </div>
-        <div className="erp-panel" style={{ padding:'14px 16px' }}>
-          <div style={{ fontSize:'11px', fontWeight:700, color:'#E65100', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'6px' }}>
+        <div className="erp-panel" style={{ padding:'9px 11px' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#E65100', textTransform:'uppercase', letterSpacing:'0.05em' }}>
             ⚠ Contas a Pagar Vencidas ({pagAtrasadas.length})
           </div>
-          <AtrasoList items={pagAtrasadasDetalhes} tipo="pagar" />
+          <AtrasoList items={pagAtrasadasDetalhes} />
         </div>
       </div>
 
       {/* ── OPERACIONAL — ORDENS ── */}
       <SectionHeader title="Operacional — Ordens de Serviço" />
-      <div style={{ marginBottom:'24px' }}>
+      <div style={{ marginBottom:'12px' }}>
         <ChevronKPI
           ariaLabel="Pipeline de status das Ordens de Serviço"
           stages={[
@@ -272,7 +250,7 @@ export default function Dashboard() {
 
       {/* ── OPERACIONAL — PEDIDOS ── */}
       <SectionHeader title="Operacional — Pedidos (Orçamentos)" />
-      <div style={{ marginBottom:'16px' }}>
+      <div>
         <ChevronKPI
           ariaLabel="Pipeline de status dos Pedidos"
           stages={[

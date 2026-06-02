@@ -37,7 +37,7 @@ export default function ChevronKPI({ stages, ariaLabel = 'Pipeline de status' })
         width: '100%',
         // overflow visível: necessário para drop-shadow não ser clipado
         overflow: 'visible',
-        minHeight: '96px',
+        minHeight: '60px',
       }}
     >
       {stages.map((stage, idx) => {
@@ -63,26 +63,26 @@ export default function ChevronKPI({ stages, ariaLabel = 'Pipeline de status' })
               clipPath: getClipPath(idx, stages.length),
               marginLeft: isFirst ? 0 : -20,
               zIndex: stages.length - idx,
-              paddingTop: 12,
-              paddingBottom: 12,
+              paddingTop: 6,
+              paddingBottom: 6,
               paddingLeft:  isFirst ? 16 : 36,
               paddingRight: 16,
               // Borda: drop-shadow acompanha o contorno do clip-path
               filter: `drop-shadow(0 0 2px ${c.border}) drop-shadow(0 0 1px ${c.border})`,
             }}
           >
-            <span style={{ fontSize: '20px', lineHeight: 1, marginBottom: '4px' }}>
+            <span style={{ fontSize: '14px', lineHeight: 1, marginBottom: '2px' }}>
               {stage.icon}
             </span>
             <span style={{
               fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.07em', color: c.text, marginBottom: '4px',
+              letterSpacing: '0.07em', color: c.text, marginBottom: '2px',
               whiteSpace: 'nowrap',
             }}>
               {stage.label}
             </span>
             <span style={{
-              fontSize: '24px', fontWeight: 800, color: c.val,
+              fontSize: '18px', fontWeight: 800, color: c.val,
               letterSpacing: '-0.02em', lineHeight: 1,
             }}>
               {stage.count}
