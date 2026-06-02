@@ -254,41 +254,38 @@ export default function VendasNorthSails() {
 
   const totalValor = filtradas.reduce((s, v) => s + (v.valor || 0), 0)
 
-  const selStyle = { fontSize:'12px', padding:'5px 8px', border:'1px solid #D8DDE6', borderRadius:'4px', background:'#fff', color:'#16191F', fontFamily:'inherit' }
+  const selStyle = { fontSize:'11px', padding:'4px 6px', border:'1px solid #D8DDE6', borderRadius:'4px', background:'#fff', color:'#16191F', fontFamily:'inherit' }
+  const th = { padding:'5px 9px', fontWeight:600, whiteSpace:'nowrap', position:'sticky', top:0, background:'#F4F6F8', zIndex:1, boxShadow:'inset 0 -1px 0 #D8DDE6' }
+  const td = { padding:'5px 9px', whiteSpace:'nowrap' }
 
   return (
-    <div style={{ padding:'20px 24px' }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'10px 14px', gap:'6px', minHeight:0 }}>
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'4px', flexWrap:'wrap', gap:'10px' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px' }}>
         <div>
-          <h1 style={{ fontSize:'18px', fontWeight:700, color:'#16191F', margin:0 }}>Vendas North Sails</h1>
-          <p style={{ fontSize:'12px', color:'#54698D', margin:'2px 0 0' }}>
-            Vendas importadas da La Brújula (vendedores Top Sail e Daniel Seixas)
+          <h1 style={{ fontSize:'14px', fontWeight:700, color:'#16191F', margin:0 }}>Vendas North Sails</h1>
+          <p style={{ fontSize:'10px', color:'#54698D', margin:'1px 0 0' }}>
+            Importadas da La Brújula (vendedores Top Sail e Daniel Seixas)
+            {meta?.ultimaSync && <> · última sync {new Date(meta.ultimaSync).toLocaleString('pt-BR')} · {vendas.length} no total</>}
           </p>
         </div>
         <button
           onClick={sincronizar}
           disabled={sincronizando}
-          style={{ fontSize:'12px', fontWeight:600, color:'#fff', background: sincronizando ? '#7FA9D6' : '#0070D2',
-            border:'none', borderRadius:'4px', padding:'8px 16px', cursor: sincronizando ? 'default' : 'pointer', fontFamily:'inherit' }}
+          style={{ fontSize:'11px', fontWeight:600, color:'#fff', background: sincronizando ? '#7FA9D6' : '#0070D2',
+            border:'none', borderRadius:'4px', padding:'5px 12px', cursor: sincronizando ? 'default' : 'pointer', fontFamily:'inherit' }}
         >
           {sincronizando ? 'Sincronizando…' : '↻ Sincronizar'}
         </button>
       </div>
 
-      {meta?.ultimaSync && (
-        <div style={{ fontSize:'11px', color:'#7F8C9A', marginBottom:'14px' }}>
-          Última sincronização: {new Date(meta.ultimaSync).toLocaleString('pt-BR')} · {vendas.length} vendas no total
-        </div>
-      )}
-
-      {msg  && <div style={{ background:'#E7F5EC', color:'#1B7F3B', fontSize:'12px', padding:'8px 12px', borderRadius:'4px', marginBottom:'12px' }}>{msg}</div>}
-      {erro && <div style={{ background:'#FDECEA', color:'#C62828', fontSize:'12px', padding:'8px 12px', borderRadius:'4px', marginBottom:'12px' }}>{erro}</div>}
+      {msg  && <div style={{ background:'#E7F5EC', color:'#1B7F3B', fontSize:'11px', padding:'5px 10px', borderRadius:'4px' }}>{msg}</div>}
+      {erro && <div style={{ background:'#FDECEA', color:'#C62828', fontSize:'11px', padding:'5px 10px', borderRadius:'4px' }}>{erro}</div>}
 
       {/* Filtros */}
-      <div style={{ display:'flex', gap:'8px', flexWrap:'wrap', marginBottom:'12px' }}>
+      <div style={{ display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center' }}>
         <input placeholder="Buscar nº pedido, cliente ou OC…" value={busca} onChange={e => setBusca(e.target.value)}
-          style={{ ...selStyle, flex:'1 1 240px', minWidth:'200px' }} />
+          style={{ ...selStyle, flex:'1 1 200px', minWidth:'160px' }} />
         <select value={fMes} onChange={e => setFMes(e.target.value)} style={selStyle}>
           <option value="">Todos os meses</option>
           {meses.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
@@ -305,12 +302,9 @@ export default function VendasNorthSails() {
           <option value="">Todos os status</option>
           {statuses.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-      </div>
-
-      {/* Resumo */}
-      <div style={{ display:'flex', gap:'16px', marginBottom:'12px', fontSize:'12px', color:'#54698D' }}>
-        <span><strong style={{ color:'#16191F' }}>{filtradas.length}</strong> vendas</span>
-        <span>Total: <strong style={{ color:'#16191F' }}>{formatCurrency(totalValor)}</strong></span>
+        <span style={{ fontSize:'11px', color:'#54698D', marginLeft:'auto', whiteSpace:'nowrap' }}>
+          <strong style={{ color:'#16191F' }}>{filtradas.length}</strong> vendas · Total <strong style={{ color:'#16191F' }}>{formatCurrency(totalValor)}</strong>
+        </span>
       </div>
 
       {/* Tabela */}
@@ -319,19 +313,19 @@ export default function VendasNorthSails() {
           Nenhuma venda importada ainda. Clique em <strong>Sincronizar</strong> para buscar as vendas na La Brújula.
         </div>
       ) : (
-        <div style={{ overflowX:'auto', border:'1px solid #E4E7EA', borderRadius:'8px' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'12px' }}>
+        <div style={{ flex:1, minHeight:0, overflow:'auto', border:'1px solid #E4E7EA', borderRadius:'8px' }}>
+          <table style={{ borderCollapse:'collapse', fontSize:'11px', minWidth:'1180px', width:'100%' }}>
             <thead>
-              <tr style={{ background:'#F4F6F8', textAlign:'left', color:'#54698D' }}>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Data</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Nº Pedido</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Empresa</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Cliente</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Itens</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Vendedor</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>OC</th>
-                <th style={{ padding:'8px 10px', fontWeight:600, textAlign:'right' }}>Valor</th>
-                <th style={{ padding:'8px 10px', fontWeight:600 }}>Status</th>
+              <tr style={{ textAlign:'left', color:'#54698D' }}>
+                <th style={th}>Data</th>
+                <th style={th}>Nº Pedido</th>
+                <th style={th}>Empresa</th>
+                <th style={th}>Cliente</th>
+                <th style={th}>Itens</th>
+                <th style={th}>Vendedor</th>
+                <th style={th}>OC</th>
+                <th style={{ ...th, textAlign:'right' }}>Valor</th>
+                <th style={th}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -340,24 +334,22 @@ export default function VendasNorthSails() {
                   style={{ borderTop:'1px solid #EDF0F2', cursor:'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background='#F8FAFC'}
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                  <td style={{ padding:'8px 10px', color:'#16191F', whiteSpace:'nowrap' }}>{formatDate(v.data)}</td>
-                  <td style={{ padding:'8px 10px', color:'#16191F', fontWeight:600 }}>{v.numeroPedido}</td>
-                  <td style={{ padding:'8px 10px', color:'#54698D' }} title={v.empresa || ''}>{empresaCurta(v.empresa)}</td>
-                  <td style={{ padding:'8px 10px', color:'#16191F' }}>{v.cliente?.nome || '—'}</td>
-                  <td style={{ padding:'8px 10px', color:'#54698D', maxWidth:'280px' }}>
+                  <td style={{ ...td, color:'#16191F' }}>{formatDate(v.data)}</td>
+                  <td style={{ ...td, color:'#16191F', fontWeight:600 }}>{v.numeroPedido}</td>
+                  <td style={{ ...td, color:'#54698D' }} title={v.empresa || ''}>{empresaCurta(v.empresa)}</td>
+                  <td style={{ ...td, color:'#16191F', maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis' }} title={v.cliente?.nome || ''}>{v.cliente?.nome || '—'}</td>
+                  <td style={{ ...td, color:'#54698D', maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis' }}>
                     {v.itens?.length > 0 ? (
                       <span title={v.itens.map(it => `${it.quantidade}× ${it.descricao}`).join('\n')}>
-                        <span style={{ display:'inline-block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'230px', verticalAlign:'bottom' }}>
-                          {v.itens[0].descricao || '—'}
-                        </span>
+                        {v.itens[0].descricao || '—'}
                         {v.itens.length > 1 && <span style={{ color:'#0070D2', fontWeight:600 }}> +{v.itens.length - 1}</span>}
                       </span>
                     ) : '—'}
                   </td>
-                  <td style={{ padding:'8px 10px', color:'#54698D' }}>{v.vendedorNome || '—'}</td>
-                  <td style={{ padding:'8px 10px', color:'#7F8C9A', fontFamily:'monospace', fontSize:'11px' }}>{v.numeroOrdemCompra || '—'}</td>
-                  <td style={{ padding:'8px 10px', color:'#16191F', textAlign:'right', whiteSpace:'nowrap' }}>{formatCurrency(v.valor || 0)}</td>
-                  <td style={{ padding:'8px 10px' }}><StatusBadge label={v.situacaoLabel} /></td>
+                  <td style={{ ...td, color:'#54698D', maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis' }} title={v.vendedorNome || ''}>{v.vendedorNome || '—'}</td>
+                  <td style={{ ...td, color:'#7F8C9A', fontFamily:'monospace' }}>{v.numeroOrdemCompra || '—'}</td>
+                  <td style={{ ...td, color:'#16191F', textAlign:'right' }}>{formatCurrency(v.valor || 0)}</td>
+                  <td style={td}><StatusBadge label={v.situacaoLabel} /></td>
                 </tr>
               ))}
             </tbody>
