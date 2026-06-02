@@ -1,29 +1,8 @@
-import { useState, useEffect } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
-import { formatCurrencyInt as formatCurrency, formatDate, currentMonthKey, monthLabel } from '../utils/helpers'
+import { formatCurrencyInt as formatCurrency, formatDate } from '../utils/helpers'
 import ChevronKPI from '../components/ui/ChevronKPI'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
-
-function MonthSelector({ value, onChange }) {
-  const prev = () => {
-    const [y, m] = value.split('-').map(Number)
-    const d = new Date(y, m - 2, 1)
-    onChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-  }
-  const next = () => {
-    const [y, m] = value.split('-').map(Number)
-    const d = new Date(y, m, 1)
-    onChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-  }
-  return (
-    <div style={{ display:'inline-flex', alignItems:'center', border:'1px solid #D8DDE6', borderRadius:'2px', background:'#fff', overflow:'hidden' }}>
-      <button onClick={prev} style={{ padding:'4px 10px', background:'none', border:'none', borderRight:'1px solid #D8DDE6', cursor:'pointer', color:'#54698D', fontSize:'13px' }}>‹</button>
-      <span style={{ padding:'4px 16px', fontSize:'12px', fontWeight:700, color:'#16191F', minWidth:'90px', textAlign:'center' }}>{monthLabel(value)}</span>
-      <button onClick={next} style={{ padding:'4px 10px', background:'none', border:'none', borderLeft:'1px solid #D8DDE6', cursor:'pointer', color:'#54698D', fontSize:'13px' }}>›</button>
-    </div>
-  )
-}
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, sub, subLabel, color, icon, onClick }) {
@@ -98,8 +77,6 @@ function AtrasoList({ items }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const hoje = todayStr()
-  const [mes, setMes] = useState(currentMonthKey())
-  const ano  = mes.substring(0, 4)
 
   const [contasReceber] = useLocalState('ts_contasReceber', [])
   const [contasPagar] = useLocalState('ts_contasPagar', [])
@@ -115,21 +92,6 @@ export default function Dashboard() {
   // Contas a pagar em atraso
   const pagAtrasadas   = contasPagar.filter(c => c.status === 'aberto' && c.vencimento < hoje)
   const valorPagAtraso = pagAtrasadas.reduce((s, c) => s + (c.valor || 0), 0)
-
-  // Faturamento do mês — ordens com dataEntrega no mês selecionado
-  const fatMes = ordens
-    .filter(o => o.dataEntrega?.substring(0, 7) === mes)
-    .reduce((s, o) => s + (parseFloat(o.valor) || 0), 0)
-
-  // Faturamento acumulado — ordens com dataEntrega no ano até o mês selecionado (jan→mes)
-  const fatAcumulado = ordens
-    .filter(o => o.dataEntrega?.substring(0, 4) === ano && o.dataEntrega?.substring(0, 7) <= mes)
-    .reduce((s, o) => s + (parseFloat(o.valor) || 0), 0)
-
-  // A receber total em aberto
-  const recAbertoTotal = contasReceber
-    .filter(c => c.status === 'aberto')
-    .reduce((s, c) => s + (c.valor || 0), 0)
 
   // A vencer (em aberto, vencimento >= hoje) — olhar pra frente
   const pagAVencer      = contasPagar.filter(c => c.status === 'aberto' && c.vencimento >= hoje)
@@ -163,8 +125,6 @@ export default function Dashboard() {
     return { nome: forn?.nome || c.descricao, vencimento: c.vencimento, valor: c.valor }
   }).sort((a, b) => (a.vencimento || '').localeCompare(b.vencimento || ''))
 
-  const mesLabel = monthLabel(mes)
-
   return (
     <div style={{ padding:'10px 16px' }}>
       <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'8px' }}>
@@ -175,16 +135,12 @@ export default function Dashboard() {
       </div>
 
       {/* ── FINANCEIRO ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px', paddingBottom:'4px', borderBottom:'2px solid #D8DDE6' }}>
+      <div style={{ marginBottom:'8px', paddingBottom:'4px', borderBottom:'2px solid #D8DDE6' }}>
         <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#54698D' }}>Financeiro</div>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          <span style={{ fontSize:'10px', color:'#54698D', fontWeight:600 }}>Período:</span>
-          <MonthSelector value={mes} onChange={setMes} />
-        </div>
       </div>
 
-      {/* 3 colunas: Contas a Pagar | Contas a Receber | Faturamento */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'12px', marginBottom:'10px', alignItems:'start' }}>
+      {/* 2 colunas: Contas a Pagar | Contas a Receber */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'10px', alignItems:'start' }}>
         <div>
           <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Contas a Pagar</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
@@ -197,23 +153,6 @@ export default function Dashboard() {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
             <KpiCard label="A Vencer" value={formatCurrency(valorRecAVencer)} sub={`${recAVencer.length}`} subLabel="conta(s)" color="blue" icon="📅" />
             <KpiCard label="Vencido"  value={formatCurrency(valorRecAtraso)}  sub={`${recAtrasadas.length}`} subLabel="conta(s)" color="red"  icon="⚠" />
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize:'10px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'5px' }}>Faturamento</div>
-          <div style={{ background:'#EAF3FB', border:'1px solid #A8C8E8', borderRadius:'2px', padding:'8px 11px' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-              <div>
-                <div style={{ fontSize:'9px', color:'#0050A0', fontWeight:600, marginBottom:'1px' }}>{mesLabel}</div>
-                <div style={{ fontSize:'17px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1.1 }}>{formatCurrency(fatMes)}</div>
-                <div style={{ fontSize:'9px', color:'#0050A0', opacity:0.8, marginTop:'2px' }}>{formatCurrency(recAbertoTotal)} a receber</div>
-              </div>
-              <div style={{ borderLeft:'1px solid #A8C8E8', paddingLeft:'10px' }}>
-                <div style={{ fontSize:'9px', color:'#0050A0', fontWeight:600, marginBottom:'1px' }}>Jan–{mesLabel}</div>
-                <div style={{ fontSize:'17px', fontWeight:800, color:'#0070D2', letterSpacing:'-0.02em', lineHeight:1.1 }}>{formatCurrency(fatAcumulado)}</div>
-                <div style={{ fontSize:'9px', color:'#0050A0', opacity:0.8, marginTop:'2px' }}>acumulado {ano}</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
