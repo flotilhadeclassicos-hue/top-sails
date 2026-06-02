@@ -306,6 +306,7 @@ export default function VendasNorthSails() {
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Data</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Nº Pedido</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Cliente</th>
+                <th style={{ padding:'8px 10px', fontWeight:600 }}>Itens</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>Vendedor</th>
                 <th style={{ padding:'8px 10px', fontWeight:600 }}>OC</th>
                 <th style={{ padding:'8px 10px', fontWeight:600, textAlign:'right' }}>Valor</th>
@@ -321,6 +322,16 @@ export default function VendasNorthSails() {
                   <td style={{ padding:'8px 10px', color:'#16191F', whiteSpace:'nowrap' }}>{formatDate(v.data)}</td>
                   <td style={{ padding:'8px 10px', color:'#16191F', fontWeight:600 }}>{v.numeroPedido}</td>
                   <td style={{ padding:'8px 10px', color:'#16191F' }}>{v.cliente?.nome || '—'}</td>
+                  <td style={{ padding:'8px 10px', color:'#54698D', maxWidth:'280px' }}>
+                    {v.itens?.length > 0 ? (
+                      <span title={v.itens.map(it => `${it.quantidade}× ${it.descricao}`).join('\n')}>
+                        <span style={{ display:'inline-block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'230px', verticalAlign:'bottom' }}>
+                          {v.itens[0].descricao || '—'}
+                        </span>
+                        {v.itens.length > 1 && <span style={{ color:'#0070D2', fontWeight:600 }}> +{v.itens.length - 1}</span>}
+                      </span>
+                    ) : '—'}
+                  </td>
                   <td style={{ padding:'8px 10px', color:'#54698D' }}>{v.vendedorNome || '—'}</td>
                   <td style={{ padding:'8px 10px', color:'#7F8C9A', fontFamily:'monospace', fontSize:'11px' }}>{v.numeroOrdemCompra || '—'}</td>
                   <td style={{ padding:'8px 10px', color:'#16191F', textAlign:'right', whiteSpace:'nowrap' }}>{formatCurrency(v.valor || 0)}</td>
