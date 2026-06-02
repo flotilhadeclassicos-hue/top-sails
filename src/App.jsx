@@ -8,6 +8,7 @@ import Pedidos from './pages/Pedidos'
 import Financeiro from './pages/financeiro/Financeiro'
 import GestaoFinanceira from './pages/GestaoFinanceira'
 import GestaoContas from './pages/GestaoContas'
+import VendasNorthSails from './pages/VendasNorthSails'
 import Relatorios from './pages/Relatorios'
 import Backup from './pages/Backup'
 import { writeLocal, readLocal, reloadAll, clearCache, preloadAll } from './hooks/useLocalState'
@@ -92,6 +93,7 @@ export default function App() {
     financeiro:       <Financeiro />,
     gestaoFinanceira: <GestaoFinanceira />,
     gestaoContas:     <GestaoContas />,
+    vendasNS:         <VendasNorthSails />,
     relatorios:       <Relatorios />,
     backup:           <Backup user={user} />,
   }

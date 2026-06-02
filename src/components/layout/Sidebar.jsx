@@ -6,6 +6,7 @@ const navItems = [
   { id: 'financeiro',      label: 'Financeiro',        icon: '◉' },
   { id: 'gestaoFinanceira',label: 'Gestão Financeira', icon: '◎' },
   { id: 'gestaoContas',    label: 'Gestão de Contas',  icon: '◑' },
+  { id: 'vendasNS',        label: 'Vendas North Sails', icon: '⛵' },
   { id: 'relatorios',      label: 'Relatórios',         icon: '◫' },
   { id: 'backup',          label: 'Backup',             icon: '◐' },
 ]
