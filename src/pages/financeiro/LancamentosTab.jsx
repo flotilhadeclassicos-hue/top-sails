@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocalState, writeLocal } from '../../hooks/useLocalState'
+import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
@@ -29,11 +29,45 @@ function FormModal({ initial, storageKey, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const payload = { ...form, valor:parseFloat(form.valor)||0, parteId:form.parteId||null }
+    const valor   = parseFloat(form.valor) || 0
+    const parteId = form.parteId || null
+    const mainId  = initial?.id || uuid()
+
+    // Contrapartida na parte relacionada (espelho em ts_offBook, tipo oposto):
+    // débito no caixa → crédito na parte; crédito no caixa → débito na parte.
+    const ob = readLocal('ts_offBook', [])
+    const espelhoExistente = initial?.parteLancId || null
+    let novoOb = ob
+    let parteLancId = null
+    if (parteId) {
+      parteLancId = espelhoExistente || uuid()
+      const espelho = {
+        id: parteLancId,
+        tipo: form.tipo === 'despesa' ? 'receita' : 'despesa',
+        descricao: form.descricao,
+        categoriaId: form.categoriaId,
+        parteId,
+        valor,
+        data: form.data,
+        baixaCruzadaId: null,
+        contaId: null,
+        origemStore: storageKey,
+        origemId: mainId,
+      }
+      novoOb = ob.some(i => i.id === parteLancId)
+        ? ob.map(i => i.id === parteLancId ? espelho : i)
+        : [...ob, espelho]
+    } else if (espelhoExistente) {
+      // Parte relacionada removida na edição → apaga o espelho
+      novoOb = ob.filter(i => i.id !== espelhoExistente)
+    }
+    if (novoOb !== ob) writeLocal('ts_offBook', novoOb)
+
+    const payload = { ...form, valor, parteId, parteLancId }
     if (initial) {
       writeLocal(storageKey, items.map(i => i.id === initial.id ? { ...i, ...payload } : i))
     } else {
-      writeLocal(storageKey, [...items, { id:uuid(), baixaCruzadaId:null, contaId:null, ...payload }])
+      writeLocal(storageKey, [...items, { id:mainId, baixaCruzadaId:null, contaId:null, ...payload }])
     }
     onClose()
   }
@@ -183,7 +217,10 @@ export default function LancamentosTab({ storageKey, title }) {
       {showForm && <FormModal initial={editItem} storageKey={storageKey} onClose={() => setShowForm(false)} />}
       {deleteItem && (
         <ConfirmModal title="Excluir Lançamento" message={`Excluir "${deleteItem.descricao}"?`} danger
-          onConfirm={() => setItems(prev => prev.filter(i => i.id !== deleteItem.id))}
+          onConfirm={() => {
+            if (deleteItem.parteLancId) writeLocal('ts_offBook', readLocal('ts_offBook', []).filter(i => i.id !== deleteItem.parteLancId))
+            setItems(prev => prev.filter(i => i.id !== deleteItem.id))
+          }}
           onClose={() => setDeleteItem(null)} />
       )}
     </div>

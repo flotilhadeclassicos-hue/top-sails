@@ -20,6 +20,8 @@ class ErrorBoundary extends Component {
   }
 }
 
+const WALLET_LABEL = { ts_financeiro:'Bancos', ts_caixinha:'Caixinha', ts_caixinhaUsd:'Caixinha USD', ts_reserva:'Reserva' }
+
 function StatCard({ label, value, cls }) {
   return (
     <div className={`erp-stat ${cls}`}>
@@ -233,12 +235,18 @@ function ExtratoModal({ parte, onClose }) {
                       {item.tipo==='receita'?'+':'−'}{formatCurrency(item.valor)}
                     </td>
                     <td className="right">
-                      <span style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
-                        {!item.baixaCruzadaId && (
-                          <button onClick={() => { setEditItem(item); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
-                        )}
-                        <button onClick={() => setDeleteItem(item)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
-                      </span>
+                      {item.origemStore ? (
+                        <span style={{ fontSize:'10px', color:'#8A99A8', fontStyle:'italic' }} title="Contrapartida automática — edite ou exclua na carteira de origem">
+                          via {WALLET_LABEL[item.origemStore] || 'caixa'}
+                        </span>
+                      ) : (
+                        <span style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                          {!item.baixaCruzadaId && (
+                            <button onClick={() => { setEditItem(item); setShowForm(true) }} className="erp-btn erp-btn-link erp-btn-sm">Editar</button>
+                          )}
+                          <button onClick={() => setDeleteItem(item)} className="erp-btn erp-btn-link-danger erp-btn-sm">Excluir</button>
+                        </span>
+                      )}
                     </td>
                   </tr>
                 )
