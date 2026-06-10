@@ -183,37 +183,52 @@ export function OrdemForm({ initial, ordens, onSave, onClose }) {
     const descConta = `${numero} — ${cat?.nome||'Serviço'}${cli?' / '+cli.nome:''}`
     const contas = readLocal('ts_contasReceber', [])
 
-    if (!initial?.id) {
-      // Nova OS — cria a conta a receber se houver valor
-      if (saved.valor > 0) {
-        const contaId = uuid()
-        writeLocal('ts_contasReceber', [...contas, {
-          id:contaId, descricao:descConta,
-          categoriaId:saved.categoriaId, valor:saved.valor, vencimento:dataEntrega||today(),
-          status:'aberto', ordemId:saved.id, lancIds:[], formaPagamento:null, baixaCruzadaId:null,
-        }])
-        saved.contaReceberId = contaId
-      }
-    } else if (contaReceber && contaReceber.status === 'aberto') {
-      // Editando OS com conta em aberto — sincroniza a conta a receber
-      writeLocal('ts_contasReceber', contas.map(c =>
-        c.id === contaReceber.id
-          ? { ...c, valor:saved.valor, vencimento:dataEntrega||c.vencimento||today(), categoriaId:saved.categoriaId, descricao:descConta }
-          : c
-      ))
-      saved.contaReceberId = contaReceber.id
-    } else if (!contaReceber && saved.valor > 0) {
-      // OS sem conta lançada — cria agora para manter consistência
+    const criarConta = () => {
       const contaId = uuid()
-      writeLocal('ts_contasReceber', [...contas, {
+      writeLocal('ts_contasReceber', [...readLocal('ts_contasReceber', []), {
         id:contaId, descricao:descConta,
         categoriaId:saved.categoriaId, valor:saved.valor, vencimento:dataEntrega||today(),
         status:'aberto', ordemId:saved.id, lancIds:[], formaPagamento:null, baixaCruzadaId:null,
       }])
-      saved.contaReceberId = contaId
-    } else if (contaReceber) {
-      // Conta já recebida — mantém o vínculo, não altera a conta
-      saved.contaReceberId = contaReceber.id
+      return contaId
+    }
+
+    if (!initial?.id) {
+      // Nova OS — cria a conta a receber se houver valor
+      if (saved.valor > 0) saved.contaReceberId = criarConta()
+    } else {
+      const linkadas = contas.filter(c => c.id === initial.contaReceberId || c.ordemId === initial.id)
+      if (linkadas.length === 0) {
+        // OS sem conta lançada — cria agora para manter consistência
+        if (saved.valor > 0) saved.contaReceberId = criarConta()
+      } else {
+        const ehUnica = linkadas.length === 1
+        const linkIds = new Set(linkadas.map(c => c.id))
+        // A categoria da conta SEMPRE segue a categoria do serviço (qualquer status).
+        // Valor/vencimento/descrição só sincronizam na conta única em aberto (não parcelada).
+        writeLocal('ts_contasReceber', contas.map(c => {
+          if (!linkIds.has(c.id)) return c
+          const base = { ...c, categoriaId: saved.categoriaId }
+          return (ehUnica && c.status === 'aberto')
+            ? { ...base, valor:saved.valor, vencimento:dataEntrega||c.vencimento||today(), descricao:descConta }
+            : base
+        }))
+        // Propaga a nova categoria para os lançamentos da baixa que carregavam a categoria antiga do serviço
+        for (const store of ['ts_financeiro', 'ts_caixinha', 'ts_offBook']) {
+          const arr = readLocal(store, [])
+          let mudou = false
+          const novo = arr.map(l => {
+            const conta = linkadas.find(c => (c.lancIds || []).includes(l.id))
+            if (conta && l.categoriaId === conta.categoriaId && l.categoriaId !== saved.categoriaId) {
+              mudou = true
+              return { ...l, categoriaId: saved.categoriaId }
+            }
+            return l
+          })
+          if (mudou) writeLocal(store, novo)
+        }
+        saved.contaReceberId = initial.contaReceberId || linkadas[0].id
+      }
     }
 
     onSave(saved); onClose()
