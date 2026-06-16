@@ -519,6 +519,66 @@ export function PreviewModal({ pedido, onClose }) {
   )
 }
 
+// ── Sincronização Pedido → OS → Contas a Receber ─────────────────────────────
+// Estado de "travado": OS/conta com financeiro já em movimento (recebido ou
+// parcelado). Nesse caso o valor é imutável e a edição dos itens é bloqueada.
+export function getPedidoLock(pedido) {
+  if (!pedido?.ordemId) return { travado:false, confirmada:false, parcelada:false }
+  const contas = readLocal('ts_contasReceber', [])
+    .filter(c => c.ordemId === pedido.ordemId)
+  const confirmada = contas.some(c => c.status === 'confirmado')
+  const parcelada  = contas.length > 1
+  return { travado: confirmada || parcelada, confirmada, parcelada }
+}
+
+// Descrição da OS regenerada a partir dos itens do pedido (mesmo formato usado
+// na geração da OS): "Descrição (Nx)" por linha.
+function descricaoDeItens(pedido) {
+  return (pedido.itens || [])
+    .filter(i => i.descricao?.trim())
+    .map(i => i.quantidade > 1 ? `${i.descricao} (${i.quantidade}x)` : i.descricao)
+    .join('\n')
+}
+
+// Propaga as alterações de um pedido para a OS vinculada e a conta a receber.
+// - Sempre sincroniza dados não-financeiros (cliente, embarcação, descrição).
+// - O valor só é atualizado quando NÃO está travado (conta nem recebida nem parcelada).
+function syncOrdemEConta(pedido) {
+  const ordens = readLocal('ts_ordens', [])
+  const ordem  = ordens.find(o => o.id === pedido.ordemId)
+  if (!ordem) return
+
+  const contas    = readLocal('ts_contasReceber', [])
+  const linkadas  = contas.filter(c => c.id === ordem.contaReceberId || c.ordemId === ordem.id)
+  const confirmada = linkadas.some(c => c.status === 'confirmado')
+  const parcelada  = linkadas.length > 1
+  const travado    = confirmada || parcelada
+
+  // Atualiza a OS
+  const ordemAtualizada = {
+    ...ordem,
+    clienteId:  pedido.clienteId,
+    embarcacao: pedido.embarcacao || '',
+    descricao:  descricaoDeItens(pedido),
+    valor:      travado ? ordem.valor : (pedido.total || 0),
+  }
+  writeLocal('ts_ordens', ordens.map(o => o.id === ordem.id ? ordemAtualizada : o))
+
+  // Atualiza a conta a receber única em aberto (espelha a regra da OrdemForm).
+  // Parcelas e contas recebidas não são tocadas.
+  if (!travado && linkadas.length === 1 && linkadas[0].status === 'aberto') {
+    const clientes = readLocal('ts_clientes', [])
+    const cli = clientes.find(c => c.id === pedido.clienteId)
+    const cat = readLocal('ts_categorias', []).find(c => c.id === ordem.categoriaId)
+    const descConta = `${ordem.numero} — ${cat?.nome || 'Serviço'}${cli ? ' / ' + cli.nome : ''}`
+    writeLocal('ts_contasReceber', contas.map(c =>
+      c.id === linkadas[0].id
+        ? { ...c, valor: pedido.total || 0, descricao: descConta }
+        : c
+    ))
+  }
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 function StatCard({ label, value, cls }) {
   return (
@@ -529,7 +589,7 @@ function StatCard({ label, value, cls }) {
   )
 }
 
-function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
+function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos, locked }) {
   const [open, setOpen] = useState(false)
   const [dropPos, setDropPos] = useState({ top:0, left:0, width:0 })
   const inputRef = useRef(null)
@@ -539,6 +599,7 @@ function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
     : produtos
 
   const openDrop = () => {
+    if (locked) return
     if (inputRef.current) {
       const r = inputRef.current.getBoundingClientRect()
       setDropPos({ top: r.bottom, left: r.left, width: r.width })
@@ -564,8 +625,9 @@ function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
           className="table-input"
           placeholder="Digite ou selecione um produto..."
           autoComplete="off"
+          disabled={locked}
         />
-        {open && sugestoes.length > 0 && (
+        {open && !locked && sugestoes.length > 0 && (
           <div style={{
             position:'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width,
             zIndex:9999,
@@ -599,27 +661,29 @@ function ItemRow({ item, idx, onUpdate, onRemove, onSelectProduct, produtos }) {
       <td style={{ padding:0 }}>
         <input type="number" min="0" step="0.01" value={item.quantidade}
           onChange={e => onUpdate(item.id,'quantidade',e.target.value)}
-          className="table-input center" />
+          className="table-input center" disabled={locked} />
       </td>
       <td style={{ padding:0 }}>
         <input type="number" min="0" step="0.01" value={item.precoUnitario}
           onChange={e => onUpdate(item.id,'precoUnitario',e.target.value)}
-          className="table-input right" />
+          className="table-input right" disabled={locked} />
       </td>
       <td className="right" style={{ fontWeight:600, paddingRight:'10px' }}>
         {formatCurrency(parseFloat(item.precoTotal)||0)}
       </td>
       <td className="center">
-        <button type="button" onClick={() => onRemove(item.id)}
-          style={{ background:'none', border:'none', cursor:'pointer', color:'#C62828', fontSize:'16px', lineHeight:1, padding:'2px' }}>
-          ×
-        </button>
+        {!locked && (
+          <button type="button" onClick={() => onRemove(item.id)}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'#C62828', fontSize:'16px', lineHeight:1, padding:'2px' }}>
+            ×
+          </button>
+        )}
       </td>
     </tr>
   )
 }
 
-function ItensTabela({ itens, onUpdate, onAdd, onRemove, onSelectProduct }) {
+function ItensTabela({ itens, onUpdate, onAdd, onRemove, onSelectProduct, locked }) {
   const produtos = readLocal('ts_produtos', [])
 
   return (
@@ -645,13 +709,16 @@ function ItensTabela({ itens, onUpdate, onAdd, onRemove, onSelectProduct }) {
               onRemove={onRemove}
               onSelectProduct={onSelectProduct}
               produtos={produtos}
+              locked={locked}
             />
           ))}
         </tbody>
       </table>
-      <div style={{ padding:'8px 10px', borderTop:'1px solid #E4E7EA' }}>
-        <button type="button" onClick={onAdd} className="erp-btn erp-btn-secondary erp-btn-sm">+ Item</button>
-      </div>
+      {!locked && (
+        <div style={{ padding:'8px 10px', borderTop:'1px solid #E4E7EA' }}>
+          <button type="button" onClick={onAdd} className="erp-btn erp-btn-secondary erp-btn-sm">+ Item</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -748,13 +815,17 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
 
   const clientes = readLocal('ts_clientes', [])
 
-  // Computed totals
+  // Lock: OS vinculada com conta a receber já recebida ou parcelada → itens/valor imutáveis
+  const lock = getPedidoLock(initial)
+
+  // Computed totals — quando travado, o total segue o valor original (itens bloqueados)
   const subtotal = form.itens.reduce((s, i) => s + (parseFloat(i.precoTotal)||0), 0)
   const total    = subtotal
 
   const set = (field, value) => setForm(f => ({ ...f, [field]:value }))
 
   const updateItem = (id, field, value) => {
+    if (lock.travado) return
     setForm(f => ({
       ...f,
       itens: f.itens.map(item => {
@@ -768,10 +839,11 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
     }))
   }
 
-  const addItem    = () => setForm(f => ({ ...f, itens:[...f.itens, EMPTY_ITEM()] }))
-  const removeItem = (id) => setForm(f => ({ ...f, itens: f.itens.filter(i => i.id !== id) }))
+  const addItem    = () => { if (lock.travado) return; setForm(f => ({ ...f, itens:[...f.itens, EMPTY_ITEM()] })) }
+  const removeItem = (id) => { if (lock.travado) return; setForm(f => ({ ...f, itens: f.itens.filter(i => i.id !== id) })) }
 
   const selectProduct = (id, produto) => {
+    if (lock.travado) return
     setForm(f => ({
       ...f,
       itens: f.itens.map(item => {
@@ -824,12 +896,18 @@ function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
         {/* Items */}
         <div style={{ marginBottom:'14px' }}>
           <label className="erp-label" style={{ marginBottom:'6px', display:'block' }}>Itens do Pedido</label>
+          {lock.travado && (
+            <div style={{ marginBottom:'8px', padding:'8px 10px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', fontSize:'11px', color:'#C62828', lineHeight:'1.5' }}>
+              🔒 Itens e valor bloqueados: a OS <strong>{initial?.ordemNumero}</strong> já tem conta a receber {lock.confirmada ? 'recebida' : 'parcelada'}. Para alterar o valor, estorne/refaça o recebimento na OS. Os demais campos continuam editáveis.
+            </div>
+          )}
           <ItensTabela
             itens={form.itens}
             onUpdate={updateItem}
             onAdd={addItem}
             onRemove={removeItem}
             onSelectProduct={selectProduct}
+            locked={lock.travado}
           />
         </div>
 
@@ -902,6 +980,8 @@ export default function Pedidos() {
         ? prev.map(p => p.id === item.id ? item : p)
         : [...prev, item]
     )
+    // Pedido alterado → propaga para a OS e a conta a receber vinculadas
+    if (item.ordemId) syncOrdemEConta(item)
   }
 
   const handleStatusChange = (id, newStatus) => {

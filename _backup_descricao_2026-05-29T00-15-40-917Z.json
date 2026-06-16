@@ -1,0 +1,1027 @@
+{
+  "ts_contasReceber": [
+    {
+      "id": "02a59939-4dec-46d3-b875-41e93a596824",
+      "valor": 3000,
+      "status": "confirmado",
+      "lancIds": [
+        "afa315f1-03ab-46e0-aec2-614568db0b2b",
+        "81bdb199-08bc-4e37-ad87-143eed80a298",
+        "f4407c62-fa92-48cf-9717-c3c94d7bb522"
+      ],
+      "ordemId": "3effe9b8-870d-4594-a59f-a0e2d80289b3",
+      "descricao": "OS-2026-0001 — Receita de serviço / Ralph Rabello de Vasconcellos  Rosa",
+      "vencimento": "2026-04-25",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "7c605ac8-944f-4248-a14e-2dea968ca31f",
+      "valor": 1260,
+      "status": "confirmado",
+      "lancIds": [
+        "cd25af97-32c1-4d5f-9857-a1c456d16848"
+      ],
+      "ordemId": "fce84ceb-79e9-4544-82ec-7fedebb8dd90",
+      "descricao": "OS-2026-0003 — Receita de serviço / Mario Garcia Simonsen",
+      "vencimento": "2026-04-27",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "pix"
+    },
+    {
+      "id": "3e718c36-62cf-4437-bd86-9c920189e665",
+      "valor": 1170,
+      "status": "confirmado",
+      "lancIds": [
+        "eacceb5e-dc50-4dfd-ba55-71a46d6283df"
+      ],
+      "ordemId": "59d6a106-e1b8-4cce-afa8-8b32e6d7bf03",
+      "pedidoId": "005fa7c2-8cbd-49bb-94d9-89cbcf9f5518",
+      "descricao": "OS-2026-0004 — Pagamento único / PE-2026-0002",
+      "vencimento": "2026-04-30",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "pix"
+    },
+    {
+      "id": "4b626556-257f-44e8-b017-f29e08976bc0",
+      "valor": 2050,
+      "status": "confirmado",
+      "lancIds": [
+        "dc2bf5ae-4f71-457c-b358-b8e23d5c30c5"
+      ],
+      "ordemId": "db404902-d26f-4b52-aef7-d7a8529aee37",
+      "pedidoId": "00fe2cfd-a461-4c28-8fc0-ba20cba015b3",
+      "descricao": "OS-2026-0005 — Pagamento único / PE-2026-0003",
+      "vencimento": "2026-04-27",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "pix"
+    },
+    {
+      "id": "04291173-8f54-4974-97c7-31ac7d0f4e1f",
+      "valor": 1100,
+      "status": "confirmado",
+      "lancIds": [
+        "ec1910d5-b23d-4c7d-a309-e81b03fc31f3"
+      ],
+      "ordemId": "d36ee17c-df9f-445e-a311-6ef1fc819c65",
+      "pedidoId": "f307e387-2389-43d3-98aa-c572a48dd978",
+      "descricao": "OS-2026-0006 — Pagamento único / PE-2026-0004",
+      "vencimento": "2026-04-27",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "pix"
+    },
+    {
+      "id": "008b69b9-2ef0-4771-a72d-98402605803a",
+      "valor": 250,
+      "status": "confirmado",
+      "lancIds": [
+        "776ff690-d070-465b-a4a4-11b07ed3bda6",
+        "2eaf624e-28d5-45b3-a1bd-232d40ee8ab5",
+        "51b2628b-7dce-4f7e-9864-98f0adadda01"
+      ],
+      "ordemId": "ccf7a7f2-6182-43b4-a69b-f6779a2cb6fe",
+      "pedidoId": "07076109-edfc-40c0-9fc8-4b23d7d8d16f",
+      "descricao": "OS-2026-0006 — Pagamento único / PE-2026-0004",
+      "vencimento": "2026-05-07",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "0de3e890-91c1-483d-8738-1e42e2bb82d3",
+      "valor": 550,
+      "status": "confirmado",
+      "lancIds": [
+        "ea077edc-1c69-4b88-bbcb-1b04a641373a"
+      ],
+      "ordemId": "5043e685-1567-4508-8339-e43bde5c5ce9",
+      "pedidoId": "0579dbdb-b9d5-4dfa-8e0b-ee67d5191a9b",
+      "descricao": "OS-2026-0007 — Pagamento único / PE-2026-0005",
+      "vencimento": "2026-05-07",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "pix"
+    },
+    {
+      "id": "de4e7c68-d832-40a6-8870-46a566dd4857",
+      "valor": 250,
+      "status": "confirmado",
+      "lancIds": [
+        "9bda35cf-1e14-4a96-a113-8909089f9b3f",
+        "2450b639-ab03-4a44-852a-6bfb4d3f581d",
+        "04d50bb0-daf1-4b4f-956d-68884b8b49f8"
+      ],
+      "ordemId": "22051ca1-5428-4f2a-bf1a-685b44002748",
+      "pedidoId": "1643bb75-87fa-4824-b65e-849d53e4b119",
+      "descricao": "OS-2026-0008 — Pagamento único / PE-2026-0006",
+      "vencimento": "2026-05-07",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "026d3c72-5533-4ec8-ad01-043c9689d827",
+      "valor": 250,
+      "status": "confirmado",
+      "lancIds": [
+        "1704c5db-cfa7-4ca8-856c-d6ec042cfd42",
+        "0f8cd2e0-2d92-4b01-bdd3-a62d455f7ffe",
+        "91ca77b3-9538-43ed-950e-6bb319c67189"
+      ],
+      "ordemId": "f3aa8764-a270-4d70-a1d8-7ae95d58981b",
+      "pedidoId": "47e6f920-7136-45ba-9532-de9af6b3a6d0",
+      "descricao": "OS-2026-0009 — Pagamento único / PE-2026-0007",
+      "vencimento": "2026-05-12",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "b69ddc91-9f21-455a-9ec0-3e18633d2730",
+      "valor": 10000,
+      "status": "confirmado",
+      "lancIds": [
+        "248b1274-7a9a-458e-8814-c7e28c7f8519",
+        "34d88c9c-5946-449d-a879-e56cf7f74e4b",
+        "ed23b137-9ed2-417a-9e8f-6b202203ff00"
+      ],
+      "ordemId": "8e17fb4a-d9a3-478a-9bcc-3cf6c5c06df7",
+      "pedidoId": "b1ed00a7-4ff6-440b-9e4e-60b5fe593544",
+      "descricao": "OS-2026-0010 — Pagamento único / PE-2026-0008",
+      "vencimento": "2026-05-11",
+      "categoriaId": "a9a0c3ef-6bbc-4759-add3-6379a80d7c28",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "4ef308a5-0d0d-4c98-afeb-ebe851a560ee",
+      "valor": 1000,
+      "status": "confirmado",
+      "lancIds": [
+        "4c112dda-b38c-4bfd-b5c3-9b204c622638",
+        "0d9a99f8-ee1f-4826-a26d-84167325577b",
+        "5a0f2ab5-cc38-491e-9e82-3bc30e90f781"
+      ],
+      "ordemId": "4a338b6c-4c04-47fc-9e11-9f740f520a17",
+      "pedidoId": "20c11b99-cdba-44e4-8114-2d1782745b70",
+      "descricao": "OS-2026-0011 — Pagamento único / PE-2026-0011",
+      "vencimento": "2026-05-12",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "a6a82f65-1299-4fd2-aea6-4b8c2b841413",
+      "valor": 1050,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "2606a25c-7858-40d4-a987-58bf4531bbc7",
+      "pedidoId": "400ab2cf-2694-4618-a1fd-18fbc2164cc0",
+      "descricao": "OS-2026-0012 — Pagamento único / PE-2026-0010",
+      "vencimento": "2026-05-23",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    },
+    {
+      "id": "73109929-53f0-40dc-9594-22fb3f0aa2a9",
+      "valor": 800,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "d84b4337-c2c6-489a-ad9f-f9b3e06ec64a",
+      "pedidoId": "3b71e75b-fbb2-4d4e-b769-592f0a447720",
+      "descricao": "OS-2026-0013 — Pagamento único / PE-2026-0009",
+      "vencimento": "2026-05-13",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    },
+    {
+      "id": "d67b56c9-491b-48ba-97be-1ed1a4a20376",
+      "valor": 300,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "b14a5b8d-a83c-4677-afe2-afb64ffbc6ac",
+      "pedidoId": "8bb5b4a7-d793-415d-83e8-9b49ee9a9b2a",
+      "descricao": "OS-2026-0014 — Pagamento único / PE-2026-0013",
+      "vencimento": "2026-05-14",
+      "categoriaId": "9a238838-826c-49b0-b94d-b922c6c319f7",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    },
+    {
+      "id": "f66376cc-1a50-4cc0-8498-d318eda43ae1",
+      "valor": 700,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "edfc3167-d3e7-4726-b3ea-c46232b0b071",
+      "pedidoId": "46454000-b410-489a-b7e2-1513804288ed",
+      "descricao": "OS-2026-0015 — Pagamento único / PE-2026-0012",
+      "vencimento": "2026-05-14",
+      "categoriaId": "9a238838-826c-49b0-b94d-b922c6c319f7",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    },
+    {
+      "id": "56105de8-1732-4cde-902b-f89b2fb6c425",
+      "valor": 300,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "27934334-b36e-4ca2-a580-1a7ff48f0d1c",
+      "pedidoId": "ccc77013-f04f-4d51-bd36-991259687f90",
+      "descricao": "OS-2026-0016 — Pagamento único / PE-2026-0014",
+      "vencimento": "2026-05-26",
+      "categoriaId": "9a238838-826c-49b0-b94d-b922c6c319f7",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    },
+    {
+      "id": "fe294575-3567-4d75-93de-3dd038a21137",
+      "valor": 250,
+      "status": "confirmado",
+      "lancIds": [
+        "143b33a3-4fca-40b8-b3bc-d82397f375ed",
+        "a3e6ccc7-ced9-43ef-909d-84de677439b3",
+        "7a058ce8-c061-40b9-9355-27bbfaadfe24"
+      ],
+      "ordemId": "d9002401-434f-44ef-b266-60e63061f431",
+      "pedidoId": "8d484ca9-ab1a-49c0-9626-3f8897a6cfb9",
+      "descricao": "OS-2026-0017 — Pagamento único / PE-2026-0015",
+      "vencimento": "2026-05-28",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null,
+      "formaPagamento": "cruzado"
+    },
+    {
+      "id": "d24c7924-9615-48c3-82ae-bcd126eb55e6",
+      "valor": 50,
+      "status": "aberto",
+      "lancIds": [],
+      "ordemId": "60ed087d-e815-478e-aa45-07bea9b30923",
+      "pedidoId": "c0af833a-602c-4688-bfc4-4429402aaff6",
+      "descricao": "OS-2026-0018 — Pagamento único / PE-2026-0016",
+      "vencimento": "2026-06-04",
+      "categoriaId": "9a238838-826c-49b0-b94d-b922c6c319f7",
+      "baixaCruzadaId": null,
+      "formaPagamento": null
+    }
+  ],
+  "ts_offBook": [
+    {
+      "id": "cd7190b8-f8c9-4339-911c-193a53fe09de",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 650,
+      "contaId": "828b1781-4b75-440f-b623-a22f74004664",
+      "parteId": null,
+      "descricao": "OS-2026-0002 — Receita de serviço / Joao Marcos Mendes De Almeida",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "11f302b5-1b90-464d-990e-4ac96a5b6a08"
+    },
+    {
+      "id": "5788d87e-dc6b-4da4-bf92-0c43be5c38ad",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 650,
+      "contaId": "828b1781-4b75-440f-b623-a22f74004664",
+      "parteId": null,
+      "descricao": "Repasse — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "11f302b5-1b90-464d-990e-4ac96a5b6a08"
+    },
+    {
+      "id": "9bda35cf-1e14-4a96-a113-8909089f9b3f",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "de4e7c68-d832-40a6-8870-46a566dd4857",
+      "parteId": null,
+      "descricao": "OS-2026-0008 — Pagamento único / PE-2026-0006",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "410fa057-aad9-4814-998f-de2cf96a0e2a"
+    },
+    {
+      "id": "2450b639-ab03-4a44-852a-6bfb4d3f581d",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "de4e7c68-d832-40a6-8870-46a566dd4857",
+      "parteId": null,
+      "descricao": "Repasse — João Marcelo Timotheo",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "410fa057-aad9-4814-998f-de2cf96a0e2a"
+    },
+    {
+      "id": "04d50bb0-daf1-4b4f-956d-68884b8b49f8",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "de4e7c68-d832-40a6-8870-46a566dd4857",
+      "parteId": "3473cea9-654a-4858-b74c-307e8027da6a",
+      "descricao": "OS-2026-0008 — Pagamento único / PE-2026-0006",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "410fa057-aad9-4814-998f-de2cf96a0e2a"
+    },
+    {
+      "id": "776ff690-d070-465b-a4a4-11b07ed3bda6",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "008b69b9-2ef0-4771-a72d-98402605803a",
+      "parteId": null,
+      "descricao": "OS-2026-0006 — Pagamento único / PE-2026-0004",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "4a99a14e-b125-4d70-9755-6c1dcfe56894"
+    },
+    {
+      "id": "2eaf624e-28d5-45b3-a1bd-232d40ee8ab5",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "008b69b9-2ef0-4771-a72d-98402605803a",
+      "parteId": null,
+      "descricao": "Repasse — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "4a99a14e-b125-4d70-9755-6c1dcfe56894"
+    },
+    {
+      "id": "51b2628b-7dce-4f7e-9864-98f0adadda01",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "008b69b9-2ef0-4771-a72d-98402605803a",
+      "parteId": "09e49a72-cb1b-4cca-85b8-9b0f08e5bd64",
+      "descricao": "OS-2026-0006 — Pagamento único / PE-2026-0004",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "4a99a14e-b125-4d70-9755-6c1dcfe56894"
+    },
+    {
+      "id": "d30686b1-ae0a-4610-ab0a-10f24cbe624a",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 1300,
+      "contaId": "3af6275c-cb25-4d43-a3c4-e5889fbcfee3",
+      "parteId": null,
+      "descricao": "Salario — Parcela 1/8",
+      "categoriaId": "dd8af067-717d-4783-9739-3ea488979213",
+      "baixaCruzadaId": "730df88f-3e5f-4f7b-876e-08549ecf3f66"
+    },
+    {
+      "id": "ce8a84eb-b7e9-45c3-8b6d-cd9ead2ae8c6",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 1300,
+      "contaId": "3af6275c-cb25-4d43-a3c4-e5889fbcfee3",
+      "parteId": null,
+      "descricao": "Recebimento — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "730df88f-3e5f-4f7b-876e-08549ecf3f66"
+    },
+    {
+      "id": "c1e5d149-a949-46d1-a826-130e52506042",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 1300,
+      "contaId": "3af6275c-cb25-4d43-a3c4-e5889fbcfee3",
+      "parteId": "09e49a72-cb1b-4cca-85b8-9b0f08e5bd64",
+      "descricao": "Salario — Parcela 1/8",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "730df88f-3e5f-4f7b-876e-08549ecf3f66"
+    },
+    {
+      "id": "1704c5db-cfa7-4ca8-856c-d6ec042cfd42",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "026d3c72-5533-4ec8-ad01-043c9689d827",
+      "parteId": null,
+      "descricao": "OS-2026-0009 — Pagamento único / PE-2026-0007",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "3a6fdfe8-e913-4577-a653-db4248521713"
+    },
+    {
+      "id": "0f8cd2e0-2d92-4b01-bdd3-a62d455f7ffe",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "026d3c72-5533-4ec8-ad01-043c9689d827",
+      "parteId": null,
+      "descricao": "Repasse — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "3a6fdfe8-e913-4577-a653-db4248521713"
+    },
+    {
+      "id": "91ca77b3-9538-43ed-950e-6bb319c67189",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "026d3c72-5533-4ec8-ad01-043c9689d827",
+      "parteId": "09e49a72-cb1b-4cca-85b8-9b0f08e5bd64",
+      "descricao": "OS-2026-0009 — Pagamento único / PE-2026-0007",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "3a6fdfe8-e913-4577-a653-db4248521713"
+    },
+    {
+      "id": "ffafc03f-b5fb-43b3-8edf-2b65634abf6f",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "937be0c1-b765-46fa-87e0-c59b75f596c2",
+      "parteId": null,
+      "descricao": "Hora Extra - Sábado reparo balão",
+      "categoriaId": "09699b53-2346-4fae-8f62-018e5c3a779c",
+      "baixaCruzadaId": "7b3b398b-8445-4d5d-b802-774969eac042"
+    },
+    {
+      "id": "59eee957-2e6f-4b8f-a5af-79b0085d217f",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "937be0c1-b765-46fa-87e0-c59b75f596c2",
+      "parteId": null,
+      "descricao": "Recebimento — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "7b3b398b-8445-4d5d-b802-774969eac042"
+    },
+    {
+      "id": "bf71b6ae-eebd-4635-b74c-a5caf7198ce8",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "937be0c1-b765-46fa-87e0-c59b75f596c2",
+      "parteId": "09e49a72-cb1b-4cca-85b8-9b0f08e5bd64",
+      "descricao": "Hora Extra - Sábado reparo balão",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "7b3b398b-8445-4d5d-b802-774969eac042"
+    },
+    {
+      "id": "afa315f1-03ab-46e0-aec2-614568db0b2b",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 3000,
+      "contaId": "02a59939-4dec-46d3-b875-41e93a596824",
+      "parteId": null,
+      "descricao": "OS-2026-0001 — Receita de serviço / Ralph Rabello de Vasconcellos  Rosa",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "62c39d2e-748d-48b1-aa47-003cdefc7941"
+    },
+    {
+      "id": "81bdb199-08bc-4e37-ad87-143eed80a298",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 3000,
+      "contaId": "02a59939-4dec-46d3-b875-41e93a596824",
+      "parteId": null,
+      "descricao": "Repasse — Mario Tinoco",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "62c39d2e-748d-48b1-aa47-003cdefc7941"
+    },
+    {
+      "id": "f4407c62-fa92-48cf-9717-c3c94d7bb522",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 3000,
+      "contaId": "02a59939-4dec-46d3-b875-41e93a596824",
+      "parteId": "651eb26f-7f9c-4f69-a8fc-ee2d9ad92df5",
+      "descricao": "OS-2026-0001 — Receita de serviço / Ralph Rabello de Vasconcellos  Rosa",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "62c39d2e-748d-48b1-aa47-003cdefc7941"
+    },
+    {
+      "id": "d7a18a5b-6076-4811-9250-5be5a7dbb36a",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 795,
+      "contaId": "63f5f43a-7d57-4f30-a8ca-1543625cf833",
+      "parteId": null,
+      "descricao": "vela snipe - ARG",
+      "categoriaId": "b4dd6467-c7e3-4ed8-ad3a-c7aeca5b9ca3",
+      "baixaCruzadaId": "cc4e9309-abc3-40bf-a622-1d72a6b22b02"
+    },
+    {
+      "id": "dadb3261-7844-4cf0-810b-8516c013bbb1",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 795,
+      "contaId": "63f5f43a-7d57-4f30-a8ca-1543625cf833",
+      "parteId": null,
+      "descricao": "Recebimento — Mario Tinoco",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "cc4e9309-abc3-40bf-a622-1d72a6b22b02"
+    },
+    {
+      "id": "7df5a467-3e9d-44fe-b11d-aff8c33ea1dc",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 795,
+      "contaId": "63f5f43a-7d57-4f30-a8ca-1543625cf833",
+      "parteId": "651eb26f-7f9c-4f69-a8fc-ee2d9ad92df5",
+      "descricao": "vela snipe - ARG",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "cc4e9309-abc3-40bf-a622-1d72a6b22b02"
+    },
+    {
+      "id": "ee0e6c32-3218-4c91-a200-0692fe8ff9fc",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 826.24,
+      "contaId": "f5ff8872-7d50-4fe8-a92c-5f20d404fe1f",
+      "parteId": null,
+      "descricao": "Eduardo Magalhães",
+      "categoriaId": "b4dd6467-c7e3-4ed8-ad3a-c7aeca5b9ca3",
+      "baixaCruzadaId": "41fb3d67-b27e-4124-871b-ae72cda9ecc5"
+    },
+    {
+      "id": "a3352787-bff7-4e16-8351-5a68ffe7451e",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 826.24,
+      "contaId": "f5ff8872-7d50-4fe8-a92c-5f20d404fe1f",
+      "parteId": null,
+      "descricao": "Recebimento — Mario Tinoco",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "41fb3d67-b27e-4124-871b-ae72cda9ecc5"
+    },
+    {
+      "id": "d6b13bc7-b528-4137-92d1-b9c0c6f212d9",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 826.24,
+      "contaId": "f5ff8872-7d50-4fe8-a92c-5f20d404fe1f",
+      "parteId": "651eb26f-7f9c-4f69-a8fc-ee2d9ad92df5",
+      "descricao": "Eduardo Magalhães",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "41fb3d67-b27e-4124-871b-ae72cda9ecc5"
+    },
+    {
+      "id": "a10e4a83-63f9-4aa5-b7ba-afc5e113d9b9",
+      "data": "2026-04-30",
+      "tipo": "receita",
+      "valor": 4309.33,
+      "contaId": null,
+      "parteId": "8dc66567-7063-4c16-b97f-7a7a778483f1",
+      "descricao": "Carga saldo NS 30/-4",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "e9feac2b-4a1e-473b-9d9b-b30e0507e5a4",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "8adc5d42-ec5a-4343-9152-cb90e8309798",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 1/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "5e5170d8-3090-41b2-a97e-4bf0e7f03d70"
+    },
+    {
+      "id": "39e71c69-165f-4a46-bdb6-6ac6924a34db",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "8adc5d42-ec5a-4343-9152-cb90e8309798",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "5e5170d8-3090-41b2-a97e-4bf0e7f03d70"
+    },
+    {
+      "id": "3ea7f066-bd47-49ec-8bf4-2097327cf9f4",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "4eed0f2a-b1a4-4358-b217-f70e459b2f06",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 2/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "51446d73-1a3d-4069-8b36-29163a282fc0"
+    },
+    {
+      "id": "85c6c68c-03c0-40e0-ab47-262ac24dc124",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "4eed0f2a-b1a4-4358-b217-f70e459b2f06",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "51446d73-1a3d-4069-8b36-29163a282fc0"
+    },
+    {
+      "id": "35c1efed-4651-416e-9699-f5b0892c8e66",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "e73e6c03-23a5-49ec-a1dd-d1ad7ae6577f",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 3/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "2196b91b-1649-45e7-b01a-35c893b5985a"
+    },
+    {
+      "id": "a3111a9e-9246-47ca-aeae-944e6f451d9f",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "e73e6c03-23a5-49ec-a1dd-d1ad7ae6577f",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "2196b91b-1649-45e7-b01a-35c893b5985a"
+    },
+    {
+      "id": "e6478af5-ac0c-4633-9c08-7afbd33ad503",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "e425836a-82c2-4f97-bf33-5fc2ee0b3ff2",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 4/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "b75f5832-2bee-4bde-a9a7-2ece07867cdc"
+    },
+    {
+      "id": "ef1f6dec-ec19-4ae5-87db-b4a7419ae1db",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "e425836a-82c2-4f97-bf33-5fc2ee0b3ff2",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "b75f5832-2bee-4bde-a9a7-2ece07867cdc"
+    },
+    {
+      "id": "c635dda9-800f-4e10-b577-5b6757180516",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "c864d57d-50a3-4da6-a68e-e2fc67e16a5a",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 5/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "7914127b-4e18-491b-9713-5ccc38c9e744"
+    },
+    {
+      "id": "026eac13-29f3-430b-9dab-8c22a8dbfb1b",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "c864d57d-50a3-4da6-a68e-e2fc67e16a5a",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "7914127b-4e18-491b-9713-5ccc38c9e744"
+    },
+    {
+      "id": "e52cd366-ae5f-4e0b-85b5-543edae3c1c8",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "bc05d0ef-2adf-4317-9202-dafb1ffb2a25",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 6/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "de7a46bc-d525-41d6-9384-5a4f5edddae7"
+    },
+    {
+      "id": "56f7f940-78b7-44b7-9d90-8b2690370dee",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "bc05d0ef-2adf-4317-9202-dafb1ffb2a25",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "de7a46bc-d525-41d6-9384-5a4f5edddae7"
+    },
+    {
+      "id": "80ae6498-3049-472e-b21f-c5e99ee25794",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "17b34e1b-e2b8-4875-b825-fea06a1a70a7",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 7/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "3d5eb7b2-5a48-4514-b465-3f071af16f02"
+    },
+    {
+      "id": "f6c73e3f-e494-45fd-b33b-f8967296b79e",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "17b34e1b-e2b8-4875-b825-fea06a1a70a7",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "3d5eb7b2-5a48-4514-b465-3f071af16f02"
+    },
+    {
+      "id": "6b4903e5-ba9c-410c-a949-978c83ab0bb9",
+      "data": "2026-05-07",
+      "tipo": "despesa",
+      "valor": 5000,
+      "contaId": "fb47aad8-f5ff-4c12-80b4-e34aa566ae81",
+      "parteId": null,
+      "descricao": "Aluguel — Parcela 8/12",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": "96beefa7-47bd-4af5-a659-5d0fa933a058"
+    },
+    {
+      "id": "478bcfd9-8c80-4493-ae59-b00909f30513",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 5000,
+      "contaId": "fb47aad8-f5ff-4c12-80b4-e34aa566ae81",
+      "parteId": null,
+      "descricao": "Recebimento — Torben Grael",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "96beefa7-47bd-4af5-a659-5d0fa933a058"
+    },
+    {
+      "id": "303969c3-5bbd-4967-bafc-f95a10813ef7",
+      "data": "2026-04-30",
+      "tipo": "despesa",
+      "valor": 42504.65,
+      "contaId": null,
+      "parteId": "acf6ebd3-c50e-415f-acc2-59556e999cd2",
+      "descricao": "Aluguel antecipado (cc NS)",
+      "categoriaId": "d88f9aa6-8ed1-48ac-92fd-15d59eaee640",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "6a86a1a0-fe31-4c34-baa5-02e6aab3fff0",
+      "data": "2026-04-30",
+      "tipo": "receita",
+      "valor": 42504.65,
+      "contaId": null,
+      "parteId": "acf6ebd3-c50e-415f-acc2-59556e999cd2",
+      "descricao": "Acerto NS (torben abateu valor das velas da NS)",
+      "categoriaId": "a9a0c3ef-6bbc-4759-add3-6379a80d7c28",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "248b1274-7a9a-458e-8814-c7e28c7f8519",
+      "data": "2026-05-11",
+      "tipo": "receita",
+      "valor": 10000,
+      "contaId": "b69ddc91-9f21-455a-9ec0-3e18633d2730",
+      "parteId": null,
+      "descricao": "OS-2026-0010 — Pagamento único / PE-2026-0008",
+      "categoriaId": "a9a0c3ef-6bbc-4759-add3-6379a80d7c28",
+      "baixaCruzadaId": "ea08f871-52dc-4804-8ccc-1e6ffd093040"
+    },
+    {
+      "id": "34d88c9c-5946-449d-a879-e56cf7f74e4b",
+      "data": "2026-05-11",
+      "tipo": "despesa",
+      "valor": 10000,
+      "contaId": "b69ddc91-9f21-455a-9ec0-3e18633d2730",
+      "parteId": null,
+      "descricao": "Repasse — Daniel de Seixas Claro ",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "ea08f871-52dc-4804-8ccc-1e6ffd093040"
+    },
+    {
+      "id": "ed23b137-9ed2-417a-9e8f-6b202203ff00",
+      "data": "2026-05-11",
+      "tipo": "receita",
+      "valor": 10000,
+      "contaId": "b69ddc91-9f21-455a-9ec0-3e18633d2730",
+      "parteId": "c31143ea-65f2-492e-b5c1-64193f0edc7b",
+      "descricao": "OS-2026-0010 — Pagamento único / PE-2026-0008",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "ea08f871-52dc-4804-8ccc-1e6ffd093040"
+    },
+    {
+      "id": "004dbac2-f1ad-49ba-9070-25ac2ddf4712",
+      "data": "2026-05-13",
+      "tipo": "despesa",
+      "valor": 9000,
+      "contaId": "b5cfb54d-928e-43de-9070-26ae5b6021b9",
+      "parteId": null,
+      "descricao": "Salario Daniel Pago por Gual- Vela J70",
+      "categoriaId": "dd8af067-717d-4783-9739-3ea488979213",
+      "baixaCruzadaId": "e95d45f2-32b2-4b08-adc4-98c84c11a378"
+    },
+    {
+      "id": "2e2b615d-8c14-43fd-bc7c-3cd61cf442dc",
+      "data": "2026-05-13",
+      "tipo": "receita",
+      "valor": 9000,
+      "contaId": "b5cfb54d-928e-43de-9070-26ae5b6021b9",
+      "parteId": null,
+      "descricao": "Recebimento — Daniel de Seixas Claro ",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "e95d45f2-32b2-4b08-adc4-98c84c11a378"
+    },
+    {
+      "id": "3e861bd0-b6ed-4f9c-ac23-a44f092241e5",
+      "data": "2026-05-13",
+      "tipo": "despesa",
+      "valor": 9000,
+      "contaId": "b5cfb54d-928e-43de-9070-26ae5b6021b9",
+      "parteId": "c31143ea-65f2-492e-b5c1-64193f0edc7b",
+      "descricao": "Salario Daniel Pago por Gual- Vela J70",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "e95d45f2-32b2-4b08-adc4-98c84c11a378"
+    },
+    {
+      "id": "f5a9a655-04ca-4455-b1b8-c8016cedf4e9",
+      "data": "2026-05-05",
+      "tipo": "despesa",
+      "valor": 750,
+      "contaId": null,
+      "parteId": "3473cea9-654a-4858-b74c-307e8027da6a",
+      "descricao": "Salario Maio",
+      "categoriaId": "dd8af067-717d-4783-9739-3ea488979213",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "7e1ecf30-3eb0-480b-928c-125b58f09d57",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 500,
+      "contaId": null,
+      "parteId": "3473cea9-654a-4858-b74c-307e8027da6a",
+      "descricao": "Salario - pagamento pix banco",
+      "categoriaId": "a41176fc-de35-41b2-ae83-d2b139d813eb",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "4c112dda-b38c-4bfd-b5c3-9b204c622638",
+      "data": "2026-05-28",
+      "tipo": "receita",
+      "valor": 1000,
+      "contaId": "4ef308a5-0d0d-4c98-afeb-ebe851a560ee",
+      "parteId": null,
+      "descricao": "OS-2026-0011 — Pagamento único / PE-2026-0011",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "e3c7217c-116b-4211-a627-1ef012372ef1"
+    },
+    {
+      "id": "0d9a99f8-ee1f-4826-a26d-84167325577b",
+      "data": "2026-05-28",
+      "tipo": "despesa",
+      "valor": 1000,
+      "contaId": "4ef308a5-0d0d-4c98-afeb-ebe851a560ee",
+      "parteId": null,
+      "descricao": "Repasse — Nicolas Ferraz",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "e3c7217c-116b-4211-a627-1ef012372ef1"
+    },
+    {
+      "id": "5a0f2ab5-cc38-491e-9e82-3bc30e90f781",
+      "data": "2026-05-28",
+      "tipo": "receita",
+      "valor": 1000,
+      "contaId": "4ef308a5-0d0d-4c98-afeb-ebe851a560ee",
+      "parteId": "09e49a72-cb1b-4cca-85b8-9b0f08e5bd64",
+      "descricao": "OS-2026-0011 — Pagamento único / PE-2026-0011",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "e3c7217c-116b-4211-a627-1ef012372ef1"
+    },
+    {
+      "id": "143b33a3-4fca-40b8-b3bc-d82397f375ed",
+      "data": "2026-05-28",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "fe294575-3567-4d75-93de-3dd038a21137",
+      "parteId": null,
+      "descricao": "OS-2026-0017 — Pagamento único / PE-2026-0015",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": "a5d48caa-7b3b-433e-b70c-d01368107490"
+    },
+    {
+      "id": "a3e6ccc7-ced9-43ef-909d-84de677439b3",
+      "data": "2026-05-28",
+      "tipo": "despesa",
+      "valor": 250,
+      "contaId": "fe294575-3567-4d75-93de-3dd038a21137",
+      "parteId": null,
+      "descricao": "Repasse — João Marcelo Timotheo",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "a5d48caa-7b3b-433e-b70c-d01368107490"
+    },
+    {
+      "id": "7a058ce8-c061-40b9-9355-27bbfaadfe24",
+      "data": "2026-05-28",
+      "tipo": "receita",
+      "valor": 250,
+      "contaId": "fe294575-3567-4d75-93de-3dd038a21137",
+      "parteId": "3473cea9-654a-4858-b74c-307e8027da6a",
+      "descricao": "OS-2026-0017 — Pagamento único / PE-2026-0015",
+      "categoriaId": "a921e338-665c-4e62-82b1-0a69bf8c6993",
+      "baixaCruzadaId": "a5d48caa-7b3b-433e-b70c-d01368107490"
+    }
+  ],
+  "ts_financeiro": [
+    {
+      "id": "dc2bf5ae-4f71-457c-b358-b8e23d5c30c5",
+      "data": "2026-05-07",
+      "tipo": "receita",
+      "valor": 2050,
+      "contaId": "4b626556-257f-44e8-b017-f29e08976bc0",
+      "parteId": null,
+      "descricao": "OS-2026-0005 — Pagamento único / PE-2026-0003",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "e43b4607-1b7a-4ea0-9352-24ed273f7d7d",
+      "data": "2026-04-30",
+      "tipo": "receita",
+      "valor": 16175.71,
+      "contaId": null,
+      "parteId": null,
+      "descricao": "Carga de saldo",
+      "categoriaId": "a41176fc-de35-41b2-ae83-d2b139d813eb",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "ea077edc-1c69-4b88-bbcb-1b04a641373a",
+      "data": "2026-05-08",
+      "tipo": "receita",
+      "valor": 550,
+      "contaId": "0de3e890-91c1-483d-8738-1e42e2bb82d3",
+      "parteId": null,
+      "descricao": "OS-2026-0007 — Pagamento único / PE-2026-0005",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "ec1910d5-b23d-4c7d-a309-e81b03fc31f3",
+      "data": "2026-05-08",
+      "tipo": "receita",
+      "valor": 1100,
+      "contaId": "04291173-8f54-4974-97c7-31ac7d0f4e1f",
+      "parteId": null,
+      "descricao": "OS-2026-0006 — Pagamento único / PE-2026-0004",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "cd25af97-32c1-4d5f-9857-a1c456d16848",
+      "data": "2026-05-08",
+      "tipo": "receita",
+      "valor": 1260,
+      "contaId": "7c605ac8-944f-4248-a14e-2dea968ca31f",
+      "parteId": null,
+      "descricao": "OS-2026-0003 — Receita de serviço / Mario Garcia Simonsen",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "eacceb5e-dc50-4dfd-ba55-71a46d6283df",
+      "data": "2026-05-12",
+      "tipo": "receita",
+      "valor": 1170,
+      "contaId": "3e718c36-62cf-4437-bd86-9c920189e665",
+      "parteId": null,
+      "descricao": "OS-2026-0004 — Pagamento único / PE-2026-0002",
+      "categoriaId": "ae26d5f9-6c58-447e-8ac8-6d1ac81aa7cc",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "60886acd-4f87-4af3-b083-66dea668da72",
+      "data": "2026-05-12",
+      "tipo": "despesa",
+      "valor": 344.25,
+      "contaId": null,
+      "parteId": null,
+      "descricao": "Gasolina e Oleo ",
+      "categoriaId": "6092fdc2-5812-4324-9c04-b99a668065c7",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "1964a9bc-b4f1-4bb9-9ae2-6d0dc6cd1983",
+      "data": "2026-05-05",
+      "tipo": "despesa",
+      "valor": 500,
+      "contaId": null,
+      "parteId": "3473cea9-654a-4858-b74c-307e8027da6a",
+      "descricao": "Pagamento Saldo Salário João",
+      "categoriaId": "dd8af067-717d-4783-9739-3ea488979213",
+      "baixaCruzadaId": null
+    },
+    {
+      "id": "e024e987-5ebc-4ace-a88a-a4af9cea34c9",
+      "data": "2026-05-14",
+      "tipo": "despesa",
+      "valor": 54,
+      "contaId": null,
+      "parteId": null,
+      "descricao": "Copra de Lan vermelha e verde + Marcador branco ",
+      "categoriaId": "a7cb11c8-611f-453e-b028-6a33f6b72834",
+      "baixaCruzadaId": null
+    }
+  ],
+  "ts_caixinha": []
+}
