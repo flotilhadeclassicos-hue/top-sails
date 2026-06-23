@@ -4,7 +4,7 @@ import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber, mon
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 import { IconEdit, IconTrash, IconDownload, IconCheck } from '../components/ui/icons'
-import { PreviewModal, PedidoForm, syncOrdemEConta } from './Pedidos'
+import { PreviewModal, PedidoForm, syncOrdemEConta, findOrdemVinculada } from './Pedidos'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 
 const STATUS_LIST = [
@@ -364,8 +364,12 @@ export default function Ordens() {
   const [pedidos, setPedidos] = useLocalState('ts_pedidos', [])
 
   const handleSavePedido = (item) => {
-    setPedidos(prev => prev.map(p => p.id === item.id ? item : p))
-    if (item.ordemId) syncOrdemEConta(item)
+    const ordem = findOrdemVinculada(item)
+    const itemFinal = ordem
+      ? { ...item, ordemId: ordem.id, ordemNumero: ordem.numero }
+      : item
+    setPedidos(prev => prev.map(p => p.id === itemFinal.id ? itemFinal : p))
+    if (ordem) syncOrdemEConta(itemFinal)
   }
 
   const months   = [...new Set(ordens.filter(o => o.dataRetirada).map(o => o.dataRetirada.substring(0, 7)))].sort().reverse()

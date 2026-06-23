@@ -569,13 +569,25 @@ export function PreviewModal({ pedido, onClose }) {
 // ── Sincronização Pedido → OS → Contas a Receber ─────────────────────────────
 // Estado de "travado": OS/conta com financeiro já em movimento (recebido ou
 // parcelado). Nesse caso o valor é imutável e a edição dos itens é bloqueada.
+// Localiza a OS vinculada a um pedido nos DOIS sentidos do vínculo:
+//  - pedido.ordemId  (OS gerada a partir do pedido)
+//  - ordem.pedidoId  (OS criada com o campo "Pedido Vinculado")
+export function findOrdemVinculada(pedido) {
+  if (!pedido) return null
+  const ordens = readLocal('ts_ordens', [])
+  return ordens.find(o => o.id === pedido.ordemId)
+      || ordens.find(o => o.pedidoId === pedido.id)
+      || null
+}
+
 export function getPedidoLock(pedido) {
-  if (!pedido?.ordemId) return { travado:false, confirmada:false, parcelada:false }
+  const ordem = findOrdemVinculada(pedido)
+  if (!ordem) return { travado:false, confirmada:false, parcelada:false, ordem:null }
   const contas = readLocal('ts_contasReceber', [])
-    .filter(c => c.ordemId === pedido.ordemId)
+    .filter(c => c.id === ordem.contaReceberId || c.ordemId === ordem.id)
   const confirmada = contas.some(c => c.status === 'confirmado')
   const parcelada  = contas.length > 1
-  return { travado: confirmada || parcelada, confirmada, parcelada }
+  return { travado: confirmada || parcelada, confirmada, parcelada, ordem }
 }
 
 // Descrição da OS regenerada a partir dos itens do pedido (mesmo formato usado
@@ -593,6 +605,7 @@ function descricaoDeItens(pedido) {
 export function syncOrdemEConta(pedido) {
   const ordens = readLocal('ts_ordens', [])
   const ordem  = ordens.find(o => o.id === pedido.ordemId)
+              || ordens.find(o => o.pedidoId === pedido.id)
   if (!ordem) return
 
   const contas    = readLocal('ts_contasReceber', [])
@@ -601,9 +614,10 @@ export function syncOrdemEConta(pedido) {
   const parcelada  = linkadas.length > 1
   const travado    = confirmada || parcelada
 
-  // Atualiza a OS
+  // Atualiza a OS (garante o backlink pedidoId para o vínculo ficar bidirecional)
   const ordemAtualizada = {
     ...ordem,
+    pedidoId:   pedido.id,
     clienteId:  pedido.clienteId,
     embarcacao: pedido.embarcacao || '',
     descricao:  descricaoDeItens(pedido),
@@ -945,7 +959,7 @@ export function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
           <label className="erp-label" style={{ marginBottom:'6px', display:'block' }}>Itens do Pedido</label>
           {lock.travado && (
             <div style={{ marginBottom:'8px', padding:'8px 10px', background:'#FDECEA', border:'1px solid #E8A09A', borderRadius:'2px', fontSize:'11px', color:'#C62828', lineHeight:'1.5' }}>
-              🔒 Itens e valor bloqueados: a OS <strong>{initial?.ordemNumero}</strong> já tem conta a receber {lock.confirmada ? 'recebida' : 'parcelada'}. Para alterar o valor, estorne/refaça o recebimento na OS. Os demais campos continuam editáveis.
+              🔒 Itens e valor bloqueados: a OS <strong>{lock.ordem?.numero || initial?.ordemNumero}</strong> já tem conta a receber {lock.confirmada ? 'recebida' : 'parcelada'}. Para alterar o valor, estorne/refaça o recebimento na OS. Os demais campos continuam editáveis.
             </div>
           )}
           <ItensTabela
@@ -1022,13 +1036,18 @@ export default function Pedidos() {
   }), [pedidos, search, statusFilter, monthFilter, clientes])
 
   const handleSave = (item) => {
+    // Resolve a OS vinculada (por ordemId ou pedidoId) e grava o backlink no pedido
+    const ordem = findOrdemVinculada(item)
+    const itemFinal = ordem
+      ? { ...item, ordemId: ordem.id, ordemNumero: ordem.numero }
+      : item
     setPedidos(prev =>
-      prev.find(p => p.id === item.id)
-        ? prev.map(p => p.id === item.id ? item : p)
-        : [...prev, item]
+      prev.find(p => p.id === itemFinal.id)
+        ? prev.map(p => p.id === itemFinal.id ? itemFinal : p)
+        : [...prev, itemFinal]
     )
     // Pedido alterado → propaga para a OS e a conta a receber vinculadas
-    if (item.ordemId) syncOrdemEConta(item)
+    if (ordem) syncOrdemEConta(itemFinal)
   }
 
   const handleStatusChange = (id, newStatus) => {
