@@ -12,6 +12,10 @@ export const formatCurrency = (value) =>
 export const formatCurrencyInt = (value) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value || 0)
 
+// Apenas o número, sem "R$" e sem casas decimais (ex.: 4910 → "4.910")
+export const formatNumberInt = (value) =>
+  new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(value || 0)
+
 export const addDays = (dateStr, days) => {
   const d = new Date(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + Number(days))

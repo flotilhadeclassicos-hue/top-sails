@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLocalState, readLocal } from '../hooks/useLocalState'
-import { uuid, formatCurrencyInt as formatCurrency, formatCurrency as fmtFull, getMonthKey, monthLabel, currentMonthKey } from '../utils/helpers'
+import { uuid, formatNumberInt as formatCurrency, formatCurrency as fmtFull, getMonthKey, monthLabel, currentMonthKey } from '../utils/helpers'
 
 // ── Fonte de dados ────────────────────────────────────────────────────────────
 function buildAll(excluirIds) {
