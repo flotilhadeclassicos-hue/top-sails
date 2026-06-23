@@ -447,12 +447,10 @@ export default function Relatorios() {
   const SEC = (bgH, textH, borderH) => ({ fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', padding:'5px 10px', border:'1px solid #D8DDE6', background:bgH, color:textH, borderLeft:`3px solid ${borderH}` })
 
   const renderRows = (items, tipo, sectionColor) => {
-    let accum = []   // cat IDs since last subtotal
     const rows = []
 
     items.forEach((item, idx) => {
       if (item.type === 'cat') {
-        accum.push(item.catId)
         const cat = categorias.find(c => c.id === item.catId)
         if (!cat) return
         const rowTotal = sumCell(all, [item.catId], tipo, null)
@@ -467,9 +465,12 @@ export default function Relatorios() {
           </tr>
         )
       } else {
-        // Subtotal row
-        const subCatIds = [...accum]
-        accum = []
+        // Subtotal como cabeçalho: soma as categorias ABAIXO dele, até o próximo subtotal
+        const subCatIds = []
+        for (let j = idx + 1; j < items.length; j++) {
+          if (items[j].type === 'subtotal') break
+          if (items[j].type === 'cat') subCatIds.push(items[j].catId)
+        }
         const subTotal = sumCell(all, subCatIds, tipo, null)
         rows.push(
           <tr key={item.id} style={{ background:'#F0F2F5', borderTop:'2px solid #D8DDE6' }}>
