@@ -544,33 +544,38 @@ function Usuarios() {
   }
 
   // ── Criar usuário ─────────────────────────────────────────────────────────
+  // Cria via Edge Function (service role) já confirmado — sem e-mail de
+  // confirmação e sem derrubar a sessão do admin logado.
   const handleCreate = async (e) => {
     e.preventDefault()
     setSaving(true)
     setStatus(null)
 
-    const { data, error } = await supabase.auth.signUp({
-      email: formNew.email,
-      password: formNew.senha,
-      options: { data: { nomeCompleto: formNew.nomeCompleto } },
+    const { data, error } = await supabase.functions.invoke('admin-update-user', {
+      body: {
+        action: 'create',
+        email: formNew.email,
+        password: formNew.senha,
+        nomeCompleto: formNew.nomeCompleto,
+      },
     })
 
-    if (error) {
-      setStatus({ type:'error', text: error.message })
+    if (error || !data?.ok) {
+      setStatus({ type:'error', text: data?.error || error?.message || 'Erro ao criar usuário' })
       setSaving(false)
       return
     }
 
-    const novoPerfil = { id: data.user.id, email: formNew.email, nomeCompleto: formNew.nomeCompleto }
+    const novoPerfil = { id: data.userId, email: formNew.email, nomeCompleto: formNew.nomeCompleto }
     await writeLocal('ts_perfis', [...readLocal('ts_perfis', []), novoPerfil])
 
-    if (data.session) {
-      setStatus({ type:'warn', text:`Usuário criado. Como a confirmação por e-mail está desativada, você será desconectado — faça login novamente.` })
-      setTimeout(() => supabase.auth.signOut(), 3000)
-    } else {
-      setStatus({ type:'ok', text:`Convite enviado para ${formNew.email}. O usuário deverá confirmar o e-mail para acessar.` })
-      setOpenNew(false)
-    }
+    // Adiciona à lista exibida já como confirmado, sem precisar recarregar
+    setAuthUsers(prev => ([...(prev || []), {
+      id: data.userId, email: formNew.email, created_at: new Date().toISOString(), confirmed: true,
+    }]))
+
+    setOpenNew(false)
+    setStatus({ type:'ok', text:`Usuário ${formNew.email} criado e liberado (confirmado) com sucesso.` })
     setSaving(false)
   }
 

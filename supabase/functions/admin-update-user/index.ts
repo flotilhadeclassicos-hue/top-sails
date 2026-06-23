@@ -41,6 +41,19 @@ Deno.serve(async (req) => {
       return ok({ users })
     }
 
+    // ── Criar usuário já confirmado (sem confirmação por e-mail) ───────────
+    if (action === 'create') {
+      if (!email || !password) return err('email e senha são obrigatórios')
+      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: nomeCompleto ? { nomeCompleto } : undefined,
+      })
+      if (createError) return err(`createUser: ${createError.message}`)
+      return ok({ userId: created.user.id, email: created.user.email, confirmed: !!created.user.email_confirmed_at })
+    }
+
     // ── Atualizar senha / nome ─────────────────────────────────────────────
     if (!email) return err('email obrigatório')
 
