@@ -209,29 +209,76 @@ function buildHTML(pedido, templateImagem) {
 </html>`
 }
 
-export async function gerarPDF(pedido) {
-  const templateImagem = readLocal('ts_template_pedido', {})?.imagem || null
+// Pré-carrega uma imagem (data URL ou remota) antes da captura. Resolve mesmo
+// em erro para não travar a geração caso o template não carregue.
+function preloadImage(src) {
+  return new Promise(resolve => {
+    if (!src) return resolve(false)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload  = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = src
+  })
+}
 
+// Renderiza o orçamento num iframe isolado e captura via html2canvas.
+async function renderCanvas(pedido, templateImagem) {
+  // Container em coordenadas reais (0,0), atrás de tudo via z-index negativo —
+  // manter fora da viewport (left:-9999px) faz o html2canvas medir/capturar a
+  // região errada e gerar PDF em branco.
   const container = document.createElement('div')
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;'
+  container.style.cssText = 'position:fixed;top:0;left:0;z-index:-9999;pointer-events:none;background:#fff;'
   document.body.appendChild(container)
 
   const iframe = document.createElement('iframe')
-  iframe.style.cssText = 'width:794px;height:1123px;border:none;'
+  iframe.style.cssText = 'width:794px;height:1123px;border:none;background:#fff;'
   container.appendChild(iframe)
   iframe.srcdoc = buildHTML(pedido, templateImagem)
 
-  await new Promise(resolve => { iframe.onload = resolve })
-  await new Promise(resolve => setTimeout(resolve, 600))
+  try {
+    await new Promise(resolve => { iframe.onload = resolve })
+    // Aguarda fontes (Google Fonts via @import) e a imagem de template (que é
+    // background-image CSS, então não entra em document.images) carregarem.
+    try { await iframe.contentDocument.fonts.ready } catch { /* fonts API ausente */ }
+    await new Promise(resolve => setTimeout(resolve, 400))
 
-  const canvas = await html2canvas(iframe.contentDocument.body, {
-    scale: 2,
-    useCORS: true,
-    width: 794,
-    windowWidth: 794,
-  })
+    const doc  = iframe.contentDocument
+    const page = doc.querySelector('.page') || doc.body
+    const w = Math.ceil(page.scrollWidth)  || 794
+    const h = Math.ceil(page.scrollHeight) || 1123
 
-  document.body.removeChild(container)
+    // Captura o .page (com dimensões explícitas) em vez do body — o body pode
+    // ter altura 0 dentro do iframe e produzir um canvas vazio.
+    return await html2canvas(page, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      width: w,
+      height: h,
+      windowWidth: w,
+      windowHeight: h,
+    })
+  } finally {
+    document.body.removeChild(container)
+  }
+}
+
+export async function gerarPDF(pedido) {
+  let templateImagem = readLocal('ts_template_pedido', {})?.imagem || null
+
+  // Garante que a imagem de template esteja em cache antes de capturar.
+  if (templateImagem) await preloadImage(templateImagem)
+
+  let canvas
+  try {
+    canvas = await renderCanvas(pedido, templateImagem)
+  } catch (e) {
+    // Imagem remota tinge o canvas (CORS) ou outro erro de render → refaz sem o
+    // template para ao menos gerar o conteúdo, em vez de um PDF em branco.
+    console.error('gerarPDF: falha com template, refazendo sem template:', e)
+    canvas = await renderCanvas(pedido, null)
+  }
 
   const imgData = canvas.toDataURL('image/png')
   const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' })
@@ -543,7 +590,7 @@ function descricaoDeItens(pedido) {
 // Propaga as alterações de um pedido para a OS vinculada e a conta a receber.
 // - Sempre sincroniza dados não-financeiros (cliente, embarcação, descrição).
 // - O valor só é atualizado quando NÃO está travado (conta nem recebida nem parcelada).
-function syncOrdemEConta(pedido) {
+export function syncOrdemEConta(pedido) {
   const ordens = readLocal('ts_ordens', [])
   const ordem  = ordens.find(o => o.id === pedido.ordemId)
   if (!ordem) return
@@ -789,7 +836,7 @@ function FF({ label, col, children }) {
 }
 
 // ── Form modal ────────────────────────────────────────────────────────────────
-function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
+export function PedidoForm({ initial, pedidos, onSave, onClose, onPreview }) {
   const [form, setForm] = useState(() => initial ? {
     ...initial,
     itens: initial.itens?.length ? initial.itens : [EMPTY_ITEM()],

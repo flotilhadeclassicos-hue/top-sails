@@ -4,7 +4,7 @@ import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber, mon
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 import { IconEdit, IconTrash, IconDownload, IconCheck } from '../components/ui/icons'
-import { PreviewModal } from './Pedidos'
+import { PreviewModal, PedidoForm, syncOrdemEConta } from './Pedidos'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 
 const STATUS_LIST = [
@@ -356,11 +356,17 @@ export default function Ordens() {
   const [clienteModal, setClienteModal] = useState(null)
   const [viewOrdem, setViewOrdem] = useState(null)
   const [previewPedido, setPreviewPedido] = useState(null)
+  const [editPedido, setEditPedido] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const clientes   = readLocal('ts_clientes', [])
   const categorias = readLocal('ts_categorias', [])
-  const pedidos    = readLocal('ts_pedidos', [])
+  const [pedidos, setPedidos] = useLocalState('ts_pedidos', [])
+
+  const handleSavePedido = (item) => {
+    setPedidos(prev => prev.map(p => p.id === item.id ? item : p))
+    if (item.ordemId) syncOrdemEConta(item)
+  }
 
   const months   = [...new Set(ordens.filter(o => o.dataRetirada).map(o => o.dataRetirada.substring(0, 7)))].sort().reverse()
   const filtered = ordens.filter(o => {
@@ -445,11 +451,12 @@ export default function Ordens() {
                   <td>
                     {pedidoVinculado ? (
                       <button
-                        onClick={() => setPreviewPedido(pedidoVinculado)}
+                        onClick={() => setEditPedido(pedidoVinculado)}
                         style={{ background:'none', border:'none', cursor:'pointer',
                           fontFamily:'monospace', fontSize:'11px', color:'#0070D2',
                           fontWeight:600, padding:0, textDecoration:'underline',
                           textDecorationStyle:'dotted', textUnderlineOffset:'2px' }}
+                        title="Abrir pedido"
                       >
                         {pedidoVinculado.numero}
                       </button>
@@ -484,6 +491,15 @@ export default function Ordens() {
       {clienteModal && <ClienteModal cliente={clienteModal} onClose={() => setClienteModal(null)} onOpenPedido={p => { setClienteModal(null); setPreviewPedido(p) }} />}
       {viewOrdem && <OrdemViewModal ordem={viewOrdem} onClose={() => setViewOrdem(null)} />}
       {previewPedido && <PreviewModal pedido={previewPedido} onClose={() => setPreviewPedido(null)} />}
+      {editPedido && (
+        <PedidoForm
+          initial={editPedido}
+          pedidos={pedidos}
+          onSave={handleSavePedido}
+          onClose={() => setEditPedido(null)}
+          onPreview={(dados) => { setEditPedido(null); setPreviewPedido(dados) }}
+        />
+      )}
     </div>
   )
 }
