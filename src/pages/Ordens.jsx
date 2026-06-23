@@ -380,6 +380,8 @@ export default function Ordens() {
     const matchM = !monthFilter || o.dataRetirada?.startsWith(monthFilter)
     return matchS && matchT && matchM
   })
+  // Ordena das mais recentes para as mais antigas (nº OS = sequência de criação)
+  .sort((a, b) => (b.numero || '').localeCompare(a.numero || ''))
 
   const handleSave = (item) => setOrdens(prev => prev.find(o => o.id === item.id) ? prev.map(o => o.id === item.id ? item : o) : [...prev, item])
 
