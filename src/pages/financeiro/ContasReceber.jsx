@@ -20,9 +20,12 @@ function BaixaModal({ conta, onClose, onDone }) {
   const [forma, setForma]   = useState('pix')
   const [parteId, setParteId] = useState('')
   const [data, setData]     = useState(today())
+  const [categoriaId, setCategoriaId] = useState(conta.categoriaId || '')
+  const [descricao, setDescricao]     = useState(conta.descricao || '')
   const [saving, setSaving] = useState(false)
   const [erro, setErro]     = useState('')
-  const partes = readLocal('ts_partes', [])
+  const partes     = readLocal('ts_partes', [])
+  const categorias = readLocal('ts_categorias', []).filter(c => c.tipo === 'receita' || c.tipo === 'ambos')
 
   const handleConfirm = async () => {
     setErro('')
@@ -33,12 +36,12 @@ function BaixaModal({ conta, onClose, onDone }) {
     try {
       if (forma === 'pix') {
         const fin = readLocal('ts_financeiro', [])
-        const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        const l = { id:uuid(), descricao, categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
         await writeLocal('ts_financeiro', [...fin, l]); novosLancIds.push(l.id)
 
       } else if (forma === 'dinheiro') {
         const cax = readLocal('ts_caixinha', [])
-        const l = { id:uuid(), descricao:conta.descricao, categoriaId:conta.categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
+        const l = { id:uuid(), descricao, categoriaId, parteId:null, valor:conta.valor, tipo:'receita', data:dt, baixaCruzadaId:null, contaId:conta.id }
         await writeLocal('ts_caixinha', [...cax, l]); novosLancIds.push(l.id)
 
       } else if (forma === 'cruzado') {
@@ -46,7 +49,7 @@ function BaixaModal({ conta, onClose, onDone }) {
         const ob    = readLocal('ts_offBook', [])
         const parte = partes.find(p => p.id === parteId)
         const allCats     = readLocal('ts_categorias', [])
-        const catReceita  = conta.categoriaId
+        const catReceita  = categoriaId
         const catParteRel = (allCats.find(c => c.nome === 'Parte Relacionada') || {}).id
 
         if (!catParteRel) {
@@ -57,7 +60,7 @@ function BaixaModal({ conta, onClose, onDone }) {
 
         // 1. Off Book Crédito — categoria da ordem
         const cr = {
-          id:uuid(), descricao: conta.descricao,
+          id:uuid(), descricao,
           categoriaId: catReceita, parteId: null,
           valor: conta.valor, tipo: 'receita',
           data: dt, baixaCruzadaId, contaId: conta.id,
@@ -71,7 +74,7 @@ function BaixaModal({ conta, onClose, onDone }) {
         }
         // 3. Gestão de Contas Crédito — conta da parte relacionada
         const gc = {
-          id:uuid(), descricao: conta.descricao,
+          id:uuid(), descricao,
           categoriaId: catParteRel, parteId,
           valor: conta.valor, tipo: 'receita',
           data: dt, baixaCruzadaId, contaId: conta.id,
@@ -97,6 +100,17 @@ function BaixaModal({ conta, onClose, onDone }) {
       <div style={{ padding:'10px 12px', background:'#F4F6F8', border:'1px solid #D8DDE6', borderRadius:'2px', marginBottom:'16px' }}>
         <div style={{ fontSize:'10px', color:'#54698D', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'3px' }}>Valor a Receber</div>
         <div style={{ fontSize:'20px', fontWeight:700, color:'#2E7D32' }}>{formatCurrency(conta.valor)}</div>
+      </div>
+      <div style={{ marginBottom:'12px' }}>
+        <label className="erp-label">Descrição</label>
+        <input value={descricao} onChange={e => setDescricao(e.target.value)} className="erp-input" />
+      </div>
+      <div style={{ marginBottom:'12px' }}>
+        <label className="erp-label">Categoria</label>
+        <select value={categoriaId} onChange={e => setCategoriaId(e.target.value)} className="erp-select">
+          <option value="">Selecione...</option>
+          {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+        </select>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
         <div>
