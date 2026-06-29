@@ -19,6 +19,7 @@ function StatCard({ label, value, cls }) {
 function BaixaModal({ conta, onClose, onDone }) {
   const [forma, setForma]   = useState('pix')
   const [parteId, setParteId] = useState('')
+  const [data, setData]     = useState(today())
   const [saving, setSaving] = useState(false)
   const [erro, setErro]     = useState('')
   const partes = readLocal('ts_partes', [])
@@ -26,7 +27,7 @@ function BaixaModal({ conta, onClose, onDone }) {
   const handleConfirm = async () => {
     setErro('')
     setSaving(true)
-    const dt = today()
+    const dt = data || today()
     const novosLancIds = []
 
     try {
@@ -97,13 +98,19 @@ function BaixaModal({ conta, onClose, onDone }) {
         <div style={{ fontSize:'10px', color:'#54698D', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'3px' }}>Valor a Receber</div>
         <div style={{ fontSize:'20px', fontWeight:700, color:'#2E7D32' }}>{formatCurrency(conta.valor)}</div>
       </div>
-      <div style={{ marginBottom:'12px' }}>
-        <label className="erp-label">Forma de Recebimento</label>
-        <select value={forma} onChange={e => { setForma(e.target.value); setParteId('') }} className="erp-select">
-          <option value="pix">PIX → Bancos</option>
-          <option value="dinheiro">Dinheiro → Caixinha</option>
-          <option value="cruzado">Pagamento Cruzado → Off Book</option>
-        </select>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
+        <div>
+          <label className="erp-label">Forma de Recebimento</label>
+          <select value={forma} onChange={e => { setForma(e.target.value); setParteId('') }} className="erp-select">
+            <option value="pix">PIX → Bancos</option>
+            <option value="dinheiro">Dinheiro → Caixinha</option>
+            <option value="cruzado">Pagamento Cruzado → Off Book</option>
+          </select>
+        </div>
+        <div>
+          <label className="erp-label">Data do Recebimento</label>
+          <input type="date" value={data} onChange={e => setData(e.target.value)} className="erp-input" />
+        </div>
       </div>
       {forma === 'cruzado' && (
         <>
