@@ -85,7 +85,7 @@ function BaixaModal({ conta, onClose, onDone }) {
       ))
       onDone(); onClose()
     } catch (e) {
-      setErro('Erro ao salvar no banco de dados. Verifique a conexão e tente novamente.')
+      setErro(`Erro ao salvar (nada foi confirmado): ${e?.message || 'verifique a conexão e tente novamente.'}`)
     } finally {
       setSaving(false)
     }

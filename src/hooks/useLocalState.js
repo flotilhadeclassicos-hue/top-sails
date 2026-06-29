@@ -17,8 +17,18 @@ function acquireChannel(key, defaultValue) {
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'kv_store', filter: `key=eq.${key}` },
-      (payload) => {
-        const v = payload.eventType === 'DELETE' ? defaultValue : payload.new.value
+      async (payload) => {
+        if (payload.eventType === 'DELETE') {
+          cache[key] = defaultValue
+          notify(key)
+          return
+        }
+        let v = payload.new?.value
+        if (v === undefined) {
+          // Realtime pode omitir/truncar o value em linhas grandes — busca do banco
+          const { data } = await supabase.from('kv_store').select('value').eq('key', key).single()
+          v = data?.value ?? cache[key] ?? defaultValue
+        }
         cache[key] = v
         notify(key)
       }
@@ -53,12 +63,20 @@ async function loadAll() {
 }
 
 async function dbWrite(key, value) {
+  const prev = cache[key]
   cache[key] = value
   notify(key)
-  await supabase.from('kv_store').upsert(
+  const { error } = await supabase.from('kv_store').upsert(
     { key, value, updated_at: new Date().toISOString() },
     { onConflict: 'key' }
   )
+  if (error) {
+    // Reverte o cache otimista e propaga o erro para o chamador tratar
+    cache[key] = prev
+    notify(key)
+    console.error(`kv_store upsert error [${key}]:`, error.message)
+    throw new Error(error.message)
+  }
 }
 
 let loaded = false
@@ -90,7 +108,8 @@ export function useLocalState(key, defaultValue) {
   const set = useCallback((value) => {
     setState(prev => {
       const next = typeof value === 'function' ? value(prev) : value
-      dbWrite(key, next)
+      // erro já é logado e o cache revertido dentro de dbWrite
+      dbWrite(key, next).catch(() => {})
       return next
     })
   }, [key])
