@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useLocalState, readLocal } from '../hooks/useLocalState'
 import { uuid, formatNumberInt as formatCurrency, formatCurrency as fmtFull, getMonthKey, monthLabel, currentMonthKey } from '../utils/helpers'
+import SortTh, { useSortable } from '../components/ui/SortTh'
 
 // ── Fonte de dados ────────────────────────────────────────────────────────────
 function buildAll(excluirIds) {
@@ -267,9 +268,13 @@ function BaseNFs() {
 
   const total = rows.reduce((s, r) => s + r.valor, 0)
 
+  // Ordenação por qualquer coluna — padrão: OS do mais recente ao mais antigo
+  const getValue = useCallback((r, key) => (key === 'valor' ? (r.valor || 0) : (r[key] || '')), [])
+  const { sorted, sort, onSort } = useSortable(rows, { key:'os', dir:'desc' }, getValue)
+
   const exportCSV = () => {
     const header = ['Nome Completo', 'CPF', 'Endereço', 'Ordem de Serviço', 'Valor', 'Observação']
-    const linhas = rows.map(r => [
+    const linhas = sorted.map(r => [
       r.nome, r.cpf, r.endereco, r.os,
       r.valor.toFixed(2).replace('.', ','),
       r.observacao,
@@ -310,16 +315,16 @@ function BaseNFs() {
         <table className="erp-table">
           <thead>
             <tr>
-              <th style={{ textAlign:'left', minWidth:'180px' }}>Nome Completo</th>
-              <th style={{ minWidth:'130px' }}>CPF</th>
-              <th style={{ minWidth:'220px' }}>Endereço</th>
-              <th style={{ minWidth:'130px' }}>Ordem de Serviço</th>
-              <th className="right" style={{ minWidth:'120px' }}>Valor</th>
-              <th style={{ minWidth:'180px' }}>Observação</th>
+              <SortTh col="nome"       label="Nome Completo"    sort={sort} onSort={onSort} style={{ minWidth:'180px' }} />
+              <SortTh col="cpf"        label="CPF"              sort={sort} onSort={onSort} style={{ minWidth:'130px' }} />
+              <SortTh col="endereco"   label="Endereço"         sort={sort} onSort={onSort} style={{ minWidth:'220px' }} />
+              <SortTh col="os"         label="Ordem de Serviço" sort={sort} onSort={onSort} style={{ minWidth:'130px' }} />
+              <SortTh col="valor"      label="Valor"            sort={sort} onSort={onSort} align="right" className="right" style={{ minWidth:'120px' }} />
+              <SortTh col="observacao" label="Observação"       sort={sort} onSort={onSort} style={{ minWidth:'180px' }} />
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {sorted.length === 0 && (
               <tr className="empty">
                 <td colSpan={6}>
                   {mes
@@ -328,7 +333,7 @@ function BaseNFs() {
                 </td>
               </tr>
             )}
-            {rows.map((r, i) => (
+            {sorted.map((r, i) => (
               <tr key={i}>
                 <td style={{ fontWeight:500 }}>{r.nome}</td>
                 <td className="muted">{r.cpf}</td>

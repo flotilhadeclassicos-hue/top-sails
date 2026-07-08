@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { OrdemForm } from './Ordens'
 import { uuid, formatDate, formatCurrency, today, addDays, generatePedidoNumber, monthLabel } from '../utils/helpers'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
+import SortTh, { useSortable } from '../components/ui/SortTh'
 import ClienteModal, { LinkBtn } from '../components/ui/ClienteModal'
 import Badge from '../components/ui/Badge'
 import { IconEdit, IconTrash, IconPdf, IconPlus, IconCheck } from '../components/ui/icons'
@@ -1035,6 +1036,21 @@ export default function Pedidos() {
     return matchS && matchT && matchM
   }), [pedidos, search, statusFilter, monthFilter, clientes])
 
+  // Ordenação por qualquer coluna — padrão: número do mais recente ao mais antigo
+  const getValue = useCallback((p, key) => {
+    switch (key) {
+      case 'numero':     return p.numero || ''
+      case 'cliente':    return clientes.find(c => c.id === p.clienteId)?.nome || ''
+      case 'embarcacao': return p.embarcacao || ''
+      case 'data':       return p.data || ''
+      case 'total':      return p.total || 0
+      case 'status':     return p.status || ''
+      case 'os':         return p.ordemNumero || ''
+      default:           return ''
+    }
+  }, [clientes])
+  const { sorted, sort, onSort } = useSortable(filtered, { key:'numero', dir:'desc' }, getValue)
+
   const handleSave = (item) => {
     // Resolve a OS vinculada (por ordemId ou pedidoId) e grava o backlink no pedido
     const ordem = findOrdemVinculada(item)
@@ -1142,18 +1158,18 @@ export default function Pedidos() {
       <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
-            <th style={{ width:'130px' }}>Número</th>
-            <th>Cliente</th>
-            <th>Embarcação</th>
-            <th style={{ width:'90px' }}>Data</th>
-            <th className="right" style={{ width:'120px' }}>Total</th>
-            <th style={{ width:'120px' }}>Status</th>
-            <th style={{ width:'110px' }}>OS Vinculada</th>
+            <SortTh col="numero"     label="Número"       sort={sort} onSort={onSort} style={{ width:'130px' }} />
+            <SortTh col="cliente"    label="Cliente"      sort={sort} onSort={onSort} />
+            <SortTh col="embarcacao" label="Embarcação"   sort={sort} onSort={onSort} />
+            <SortTh col="data"       label="Data"         sort={sort} onSort={onSort} style={{ width:'90px' }} />
+            <SortTh col="total"      label="Total"        sort={sort} onSort={onSort} align="right" className="right" style={{ width:'120px' }} />
+            <SortTh col="status"     label="Status"       sort={sort} onSort={onSort} style={{ width:'120px' }} />
+            <SortTh col="os"         label="OS Vinculada" sort={sort} onSort={onSort} style={{ width:'110px' }} />
             <th style={{ width:'170px' }}>Ações</th>
           </tr></thead>
           <tbody>
-            {filtered.length === 0 && <tr className="empty"><td colSpan={8}>Nenhum pedido encontrado</td></tr>}
-            {[...filtered].reverse().map(pedido => {
+            {sorted.length === 0 && <tr className="empty"><td colSpan={8}>Nenhum pedido encontrado</td></tr>}
+            {sorted.map(pedido => {
               const cli = clientes.find(c => c.id === pedido.clienteId)
               const temOS = !!pedido.ordemId
               return (

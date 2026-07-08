@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
+import SortTh, { useSortable } from '../../components/ui/SortTh'
 import { PreviewModal } from '../Pedidos'
 
 function StatCard({ label, value, cls }) {
@@ -241,6 +242,19 @@ export default function LancamentosTab({ storageKey, title }) {
     return matchS && matchT
   })
 
+  // Ordenação por qualquer coluna — padrão: data do mais recente ao mais antigo
+  const getValue = useCallback((i, key) => {
+    switch (key) {
+      case 'data':      return i.data || ''
+      case 'descricao': return i.descricao || ''
+      case 'categoria': return categorias.find(c => c.id === i.categoriaId)?.nome || ''
+      case 'tipo':      return i.tipo || ''
+      case 'valor':     return i.valor || 0
+      default:          return ''
+    }
+  }, [categorias])
+  const { sorted, sort, onSort } = useSortable(filtered, { key:'data', dir:'desc' }, getValue)
+
   const totalC = monthItems.filter(i => i.tipo==='receita').reduce((s,i) => s+(i.valor||0), 0)
   const totalD = monthItems.filter(i => i.tipo==='despesa').reduce((s,i) => s+(i.valor||0), 0)
   const saldo  = totalC - totalD
@@ -275,17 +289,17 @@ export default function LancamentosTab({ storageKey, title }) {
         <table className="erp-table">
           <thead>
             <tr>
-              <th style={{ width:'90px' }}>Data</th>
-              <th>Descrição</th>
-              <th style={{ width:'140px' }}>Categoria</th>
-              <th style={{ width:'80px' }}>Tipo</th>
-              <th className="right" style={{ width:'120px' }}>Valor</th>
+              <SortTh col="data"      label="Data"      sort={sort} onSort={onSort} style={{ width:'90px' }} />
+              <SortTh col="descricao" label="Descrição" sort={sort} onSort={onSort} />
+              <SortTh col="categoria" label="Categoria" sort={sort} onSort={onSort} style={{ width:'140px' }} />
+              <SortTh col="tipo"      label="Tipo"      sort={sort} onSort={onSort} style={{ width:'80px' }} />
+              <SortTh col="valor"     label="Valor"     sort={sort} onSort={onSort} align="right" className="right" style={{ width:'120px' }} />
               <th style={{ width:'100px' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length===0 && <tr className="empty"><td colSpan={6}>Nenhum lançamento</td></tr>}
-            {[...filtered].reverse().map(item => {
+            {sorted.length===0 && <tr className="empty"><td colSpan={6}>Nenhum lançamento</td></tr>}
+            {sorted.map(item => {
               const cat = categorias.find(c => c.id === item.categoriaId)
               return (
                 <tr key={item.id} onClick={() => setViewItem(item)} style={{ cursor:'pointer' }}>

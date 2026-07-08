@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, addDays, today, generateOSNumber, monthLabel } from '../utils/helpers'
+import SortTh, { useSortable } from '../components/ui/SortTh'
 import Modal, { ConfirmModal } from '../components/ui/Modal'
 import Badge from '../components/ui/Badge'
 import { IconEdit, IconTrash, IconDownload, IconCheck } from '../components/ui/icons'
@@ -401,8 +402,23 @@ export default function Ordens() {
     const matchM = !monthFilter || o.dataRetirada?.startsWith(monthFilter)
     return matchS && matchT && matchM
   })
-  // Ordena das mais recentes para as mais antigas (nº OS = sequência de criação)
-  .sort((a, b) => (b.numero || '').localeCompare(a.numero || ''))
+
+  // Ordenação por qualquer coluna — padrão: nº OS do mais recente ao mais antigo
+  const getValue = useCallback((o, key) => {
+    switch (key) {
+      case 'numero':     return o.numero || ''
+      case 'cliente':    return clientes.find(c => c.id === o.clienteId)?.nome || ''
+      case 'embarcacao': return o.embarcacao || ''
+      case 'categoria':  return categorias.find(c => c.id === o.categoriaId)?.nome || ''
+      case 'retirada':   return o.dataRetirada || ''
+      case 'entrega':    return o.dataEntrega || ''
+      case 'valor':      return o.valor || 0
+      case 'pedido':     return pedidos.find(p => p.id === o.pedidoId)?.numero || ''
+      case 'status':     return o.status || ''
+      default:           return ''
+    }
+  }, [clientes, categorias, pedidos])
+  const { sorted, sort, onSort } = useSortable(filtered, { key:'numero', dir:'desc' }, getValue)
 
   const handleSave = (item) => setOrdens(prev => prev.find(o => o.id === item.id) ? prev.map(o => o.id === item.id ? item : o) : [...prev, item])
 
@@ -449,14 +465,21 @@ export default function Ordens() {
         <table className="erp-table">
           <thead>
             <tr>
-              <th>Nº OS</th><th>Cliente</th><th>Embarcação</th><th>Categoria</th>
-              <th>Retirada</th><th>Entrega</th><th className="right">Valor</th>
-              <th>Pedido</th><th>Status</th><th style={{ width:'140px' }}>Ações</th>
+              <SortTh col="numero"     label="Nº OS"      sort={sort} onSort={onSort} />
+              <SortTh col="cliente"    label="Cliente"    sort={sort} onSort={onSort} />
+              <SortTh col="embarcacao" label="Embarcação" sort={sort} onSort={onSort} />
+              <SortTh col="categoria"  label="Categoria"  sort={sort} onSort={onSort} />
+              <SortTh col="retirada"   label="Retirada"   sort={sort} onSort={onSort} />
+              <SortTh col="entrega"    label="Entrega"    sort={sort} onSort={onSort} />
+              <SortTh col="valor"      label="Valor"      sort={sort} onSort={onSort} align="right" className="right" />
+              <SortTh col="pedido"     label="Pedido"     sort={sort} onSort={onSort} />
+              <SortTh col="status"     label="Status"     sort={sort} onSort={onSort} />
+              <th style={{ width:'140px' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr className="empty"><td colSpan={10}>Nenhuma OS encontrada</td></tr>}
-            {filtered.map(ordem => {
+            {sorted.length === 0 && <tr className="empty"><td colSpan={10}>Nenhuma OS encontrada</td></tr>}
+            {sorted.map(ordem => {
               const cli = clientes.find(c => c.id === ordem.clienteId)
               const cat = categorias.find(c => c.id === ordem.categoriaId)
               const conta = contaDeOrdem(ordem)

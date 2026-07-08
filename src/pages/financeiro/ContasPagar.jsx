@@ -431,7 +431,7 @@ export default function ContasPagar() {
   const [statusFilter, setStatusFilter] = useState('aberto')
   const [monthFilter,  setMonthFilter]  = useState('')
   const [busca, setBusca] = useState('')
-  const [sort, setSort]   = useState({ key:'vencimento', dir:'asc' })
+  const [sort, setSort]   = useState({ key:'vencimento', dir:'desc' })
 
   const fornecedores = readLocal('ts_fornecedores', [])
   const categorias   = readLocal('ts_categorias', [])
