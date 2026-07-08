@@ -17,6 +17,89 @@ function StatCard({ label, value, cls }) {
   )
 }
 
+// ── Modal de visualização da Conta a Receber + documentos (OS / Pedido) ──────
+function ContaViewModal({ conta, categorias, clientes, ordens, pedidos, clienteDaConta, onClose, onEdit, onOpenPedido }) {
+  const cat = categorias.find(c => c.id === conta.categoriaId)
+  const cli = clienteDaConta(conta)
+  const cliNome = (id) => clientes.find(c => c.id === id)?.nome || '—'
+
+  const ordem  = conta.ordemId
+    ? ordens.find(o => o.id === conta.ordemId)
+    : ordens.find(o => o.contaReceberId === conta.id)
+  const pedido = ordem ? pedidos.find(p => p.id === ordem.pedidoId)
+               : (conta.pedidoId ? pedidos.find(p => p.id === conta.pedidoId) : null)
+
+  const docs = []
+  if (ordem)  docs.push({ tipo:'Ordem de Serviço', numero:ordem.numero,  desc: ordem.descricao || cliNome(ordem.clienteId), valor: ordem.valor, data: ordem.dataRetirada })
+  if (pedido) docs.push({ tipo:'Pedido',           numero:pedido.numero, desc: cliNome(pedido.clienteId), valor: pedido.total, data: pedido.data, onClick: () => onOpenPedido(pedido) })
+
+  const Campo = ({ label, children, mono }) => (
+    <div style={{ display:'flex', gap:'8px', padding:'7px 0', borderBottom:'1px solid #F0F2F5' }}>
+      <span style={{ fontSize:'11px', color:'#54698D', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', minWidth:'130px', flexShrink:0 }}>{label}</span>
+      <span style={{ fontSize:'13px', color:'#16191F', fontFamily: mono ? 'monospace' : 'inherit', fontWeight: mono ? 700 : 400 }}>{children}</span>
+    </div>
+  )
+
+  return (
+    <Modal title="Conta a Receber" onClose={onClose} size="md">
+      <div style={{ padding:'4px 0' }}>
+        <Campo label="Descrição">{conta.descricao || '—'}</Campo>
+        <Campo label="Cliente">{cli?.nome || conta.clienteNome || '—'}</Campo>
+        <Campo label="Categoria">{cat?.nome || '—'}</Campo>
+        <Campo label="Vencimento">{formatDate(conta.vencimento)}</Campo>
+        <Campo label="Pagamento">{conta.formaPagamento ? <Badge value={conta.formaPagamento} /> : '—'}</Campo>
+        <Campo label="Valor"><span style={{ color:'#2E7D32', fontWeight:700 }}>{formatCurrency(conta.valor)}</span></Campo>
+        <Campo label="Status"><Badge value={conta.status} /></Campo>
+      </div>
+
+      <div style={{ marginTop:'16px' }}>
+        <div style={{ fontSize:'11px', fontWeight:700, color:'#54698D', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'6px' }}>
+          Documentos de origem
+        </div>
+        {docs.length === 0 ? (
+          <div style={{ fontSize:'12px', color:'#8A99A8', padding:'8px 0' }}>
+            Sem OS/Pedido vinculado (conta avulsa ou importada).
+          </div>
+        ) : (
+          <div className="erp-panel">
+            <table className="erp-table">
+              <thead><tr>
+                <th style={{ width:'150px' }}>Documento</th>
+                <th style={{ width:'120px' }}>Número</th>
+                <th>Descrição / Cliente</th>
+                <th style={{ width:'90px' }}>Data</th>
+                <th className="right" style={{ width:'110px' }}>Valor</th>
+              </tr></thead>
+              <tbody>
+                {docs.map((d, i) => (
+                  <tr key={i}>
+                    <td>{d.tipo}</td>
+                    <td className="mono">
+                      {d.onClick
+                        ? <button onClick={d.onClick} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:'monospace', color:'#0070D2', fontWeight:700, fontSize:'12px', padding:0, textDecoration:'underline' }}>{d.numero}</button>
+                        : <span style={{ fontFamily:'monospace', fontWeight:600 }}>{d.numero}</span>}
+                    </td>
+                    <td className="muted" style={{ maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={d.desc}>{d.desc || '—'}</td>
+                    <td className="muted">{formatDate(d.data)}</td>
+                    <td className="right" style={{ fontWeight:600 }}>{formatCurrency(d.valor || 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'18px', paddingTop:'14px', borderTop:'1px solid #E4E7EA' }}>
+        <button onClick={onClose} className="erp-btn erp-btn-secondary">Fechar</button>
+        {conta.status === 'aberto' && (
+          <button onClick={() => onEdit(conta)} className="erp-btn erp-btn-primary">Editar</button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 function BaixaModal({ conta, onClose, onDone }) {
   const [forma, setForma]   = useState('pix')
   const [parteId, setParteId] = useState('')
@@ -213,6 +296,7 @@ export default function ContasReceber() {
   const [cadeiaId, setCadeiaId] = useState(null)
   const [clienteModal, setClienteModal] = useState(null)
   const [previewPedido, setPreviewPedido] = useState(null)
+  const [viewConta, setViewConta] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [statusFilter, setStatusFilter] = useState('aberto')
   const [monthFilter,  setMonthFilter]  = useState('')
@@ -332,11 +416,12 @@ export default function ContasReceber() {
               const isCruzado  = conta.lancIds?.length>0 && conta.formaPagamento==='cruzado'
               const atrasada   = isAtrasada(conta)
               return (
-                <tr key={conta.id} style={atrasada ? { background:'#FFF5F5' } : undefined}>
+                <tr key={conta.id} onClick={() => setViewConta(conta)}
+                  style={{ cursor:'pointer', ...(atrasada ? { background:'#FFF5F5' } : {}) }}>
                   <td>{conta.descricao}</td>
                   <td style={{ maxWidth:'260px' }}>
                     {clienteObj
-                      ? <LinkBtn className="ellipsis-cell" style={{ maxWidth:'248px' }} title={clienteObj.nome} onClick={() => setClienteModal(clienteObj)}>{clienteObj.nome}</LinkBtn>
+                      ? <LinkBtn className="ellipsis-cell" style={{ maxWidth:'248px' }} title={clienteObj.nome} onClick={(e) => { e?.stopPropagation?.(); setClienteModal(clienteObj) }}>{clienteObj.nome}</LinkBtn>
                       : conta.clienteNome
                         ? <span className="ellipsis-cell" style={{ maxWidth:'248px' }} title={conta.clienteNome}>{conta.clienteNome}</span>
                         : <span className="muted">—</span>}
@@ -352,7 +437,7 @@ export default function ContasReceber() {
                       ? <span style={{ display:'inline-block', padding:'1px 7px', fontSize:'11px', fontWeight:600, borderRadius:'2px', border:'1px solid #E89088', background:'#FDECEA', color:'#C62828', whiteSpace:'nowrap' }}>Em atraso</span>
                       : <Badge value={conta.status} />}
                   </td>
-                  <td>
+                  <td onClick={e => e.stopPropagation()}>
                     <span style={{ display:'flex', gap:'2px', alignItems:'center' }}>
                       {conta.status==='aberto' && <>
                         <button onClick={() => setBaixaItem(conta)} className="erp-icon-btn green" title="Baixar (registrar recebimento)"><IconDownload /></button>
@@ -370,6 +455,19 @@ export default function ContasReceber() {
         </table>
       </div>
 
+      {viewConta && (
+        <ContaViewModal
+          conta={viewConta}
+          categorias={categorias}
+          clientes={clientes}
+          ordens={ordens}
+          pedidos={pedidos}
+          clienteDaConta={clienteDaConta}
+          onClose={() => setViewConta(null)}
+          onEdit={(c) => { setViewConta(null); setEditItem(c); setShowForm(true) }}
+          onOpenPedido={(p) => { setViewConta(null); setPreviewPedido(p) }}
+        />
+      )}
       {showForm && <ContaForm initial={editItem} onClose={() => setShowForm(false)} onDone={refresh} />}
       {baixaItem && <BaixaModal conta={baixaItem} onClose={() => setBaixaItem(null)} onDone={refresh} />}
       {deleteItem && <ConfirmModal title="Excluir Conta" message={`Excluir "${deleteItem.descricao}"?`} danger onConfirm={() => setContas(prev => prev.filter(c => c.id!==deleteItem.id))} onClose={() => setDeleteItem(null)} />}
