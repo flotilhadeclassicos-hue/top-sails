@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useLocalState, readLocal, writeLocal } from '../../hooks/useLocalState'
 import { uuid, formatDate, formatCurrency, today, monthLabel } from '../../utils/helpers'
 import Modal, { ConfirmModal } from '../../components/ui/Modal'
 import Badge from '../../components/ui/Badge'
 import { IconEdit, IconTrash, IconDownload, IconUndo, IconLink } from '../../components/ui/icons'
 import ClienteModal, { LinkBtn } from '../../components/ui/ClienteModal'
+import SortTh, { useSortable } from '../../components/ui/SortTh'
 import { PreviewModal } from '../Pedidos'
 
 function StatCard({ label, value, cls }) {
@@ -246,6 +247,21 @@ export default function ContasReceber() {
     return !statusFilter || c.status === statusFilter
   })
 
+  // Ordenação por qualquer coluna — padrão: vencimento do mais recente ao mais antigo
+  const getValue = useCallback((c, key) => {
+    switch (key) {
+      case 'descricao':  return c.descricao || ''
+      case 'cliente':    return clienteDaConta(c)?.nome || c.clienteNome || ''
+      case 'categoria':  return categorias.find(x => x.id === c.categoriaId)?.nome || ''
+      case 'vencimento': return c.vencimento || ''
+      case 'pagamento':  return c.formaPagamento || ''
+      case 'valor':      return c.valor || 0
+      case 'status':     return isAtrasada(c) ? 'atraso' : (c.status || '')
+      default:           return ''
+    }
+  }, [categorias, clientes, ordens, pedidos, hoje])
+  const { sorted, sort, onSort } = useSortable(filtered, { key:'vencimento', dir:'desc' }, getValue)
+
   const emAberto  = baseContas.filter(c => c.status==='aberto').reduce((s,c) => s+(c.valor||0), 0)
   const recebido  = baseContas.filter(c => c.status==='confirmado').reduce((s,c) => s+(c.valor||0), 0)
   const emAtraso  = baseContas.filter(isAtrasada).reduce((s,c) => s+(c.valor||0), 0)
@@ -299,15 +315,18 @@ export default function ContasReceber() {
       <div className="erp-panel erp-panel-fill">
         <table className="erp-table">
           <thead><tr>
-            <th>Descrição</th><th style={{ width:'260px' }}>Cliente</th>
-            <th style={{ width:'110px' }}>Categoria</th>
-            <th style={{ width:'90px' }}>Vencimento</th><th style={{ width:'80px' }}>Pagamento</th>
-            <th className="right" style={{ width:'110px' }}>Valor</th>
-            <th style={{ width:'90px' }}>Status</th><th style={{ width:'160px' }}>Ações</th>
+            <SortTh col="descricao"  label="Descrição"  sort={sort} onSort={onSort} />
+            <SortTh col="cliente"    label="Cliente"    sort={sort} onSort={onSort} style={{ width:'260px' }} />
+            <SortTh col="categoria"  label="Categoria"  sort={sort} onSort={onSort} style={{ width:'110px' }} />
+            <SortTh col="vencimento" label="Vencimento" sort={sort} onSort={onSort} style={{ width:'90px' }} />
+            <SortTh col="pagamento"  label="Pagamento"  sort={sort} onSort={onSort} style={{ width:'80px' }} />
+            <SortTh col="valor"      label="Valor"      sort={sort} onSort={onSort} align="right" className="right" style={{ width:'110px' }} />
+            <SortTh col="status"     label="Status"     sort={sort} onSort={onSort} style={{ width:'90px' }} />
+            <th style={{ width:'160px' }}>Ações</th>
           </tr></thead>
           <tbody>
-            {filtered.length===0 && <tr className="empty"><td colSpan={8}>Nenhuma conta encontrada</td></tr>}
-            {filtered.map(conta => {
+            {sorted.length===0 && <tr className="empty"><td colSpan={8}>Nenhuma conta encontrada</td></tr>}
+            {sorted.map(conta => {
               const cat        = categorias.find(c => c.id===conta.categoriaId)
               const clienteObj = clienteDaConta(conta)
               const isCruzado  = conta.lancIds?.length>0 && conta.formaPagamento==='cruzado'
